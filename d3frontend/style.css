@@ -1,0 +1,28 @@
+body {
+  background-color: black;
+}
+
+svg {
+  background-color: black;
+  overflow: visible;
+}
+
+path.ui.structure {
+  stroke: #00FF00;
+  stroke-width: 4;
+}
+
+path.ui.mode_choice.chosen {
+  fill: #0000FF;
+}
+
+path.ui.mode_choice.unchosen {
+  fill: #1B4D3E;
+}
+
+text.ui.mode-label {
+  font-family: 'Orbitron', sans-serif;
+  text-anchor: middle;
+  font-size: 30px;
+  fill: #00FF00;
+}

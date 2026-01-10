@@ -3,7 +3,9 @@
 import os, pty
 import time, random
 
-import vals_pb2
+import json
+
+from noec_utils import obj_to_msg
 
 # Open a new pseudo-terminal pair
 devicefd, clientfd = pty.openpty()
@@ -14,51 +16,28 @@ print("Client TTY name:", client_tty)
 
 input("Press Enter to start device emulator")
 
-every_ms = 50
-do_update_prob = 2
-num_vals = 4
+every_ms = 50.0
+do_update_prob = 1
+num_vals = 20
+vals = [0 for x in range(num_vals)]
 tick = 0
 
-def escape_msg(bytstr):
-  obs = b''
-  for c in bytstr:
-    if c == 0xf1:
-      obs += b'\xe0\xe1'
-    elif c == 0xf2:
-      obs += b'\xe0\xe2'
-    elif c == 0xf3:
-      obs += b'\xe0\xe3'
-    elif c == 0xe0:
-      obs += b'\xe0\xe0'
-    else:
-      obs += bytes([c])
-  return obs
-
-msgcmd = vals_pb2.Command()
-msgupbody = vals_pb2.UpdateBody()
-
 while True:
-
-  msgcmd.cmd = vals_pb2.Command.command.UPDATE
-
   rnint = random.randint(0,do_update_prob)
   if (rnint == 0) or (tick % 20) == 0:
 
     if (rnint == 0):
-      key = random.randint(0,num_vals)
-      delta = random.randint(-127,385) if msgupbody.values[key] <= 2047 else random.randint(-385,127)
+      key = random.randint(0,num_vals-1)
+      delta = random.randint(-127,385) if vals[key] <= 2047 else random.randint(-385,127)
+      nval =  min(max(vals[key] + delta,0),4095)
+      vals[key] =nval
 
-      msgupbody.values[key] = min(max(msgupbody.values[key] + delta,0),4095)
-
-    print(f"{tick} -- message (unescaped) payload: %s" % ''.join(format(x, '02x') for x in msgcmd.SerializeToString() + msgupbody.SerializeToString()))
-
-    payload = b'\xf1' + escape_msg(msgcmd.SerializeToString()) + b'\xf2' + escape_msg(msgupbody.SerializeToString()) + b'\xf3'
-    print(f"{tick} -- message (escaped) payload: %s" % ''.join(format(x, '02x') for x in payload))
-
-    os.write(devicefd, payload)
+    os.write(devicefd, b'\xf1')
+    os.write(devicefd, obj_to_msg({"cmd": "UPDATE", "tick": tick, "vals": vals}))
+    os.write(devicefd, b'\xf2')
 
     if (rnint == 0):
-      print(f"{tick} -- Update: values[{key}] = {msgupbody.values[key]} ADC")
+      print(f"{tick} -- Update: values[{key}] = {vals[key]} ADC")
     else:
       print(f"{tick} -- Heartbeat")
 
