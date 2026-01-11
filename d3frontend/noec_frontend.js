@@ -43,7 +43,8 @@ const add_mode_choice = (parent_el, mode_choice_data) => {
   const lpos = i*(w+lw);
   draw_rect(el, {x:lpos, y:0, w:w, h:h},"mode-choice-bkg");
 
-  draw_text(el, {x: lpos + 0.5*w, y: h/2.0, text: mode_choice_data.label}, "mode-choice-label");
+  draw_text(el, {x: lpos + 0.5*w, y: h/2.0, text: mode_choice_data.label}, "mode-choice-label")
+    .attr("font-size", mode_choice_data.fs);
 
   draw_line(el, { ends: [ [lpos + w + (lw/2.0), 0],
                           [lpos + w + (lw/2.0), h] ],
@@ -57,8 +58,8 @@ const add_param_trace = (parent_el, trace_data) => {
   const pd = trace_data.plot_dims;
 
   const i = trace_data.trace_i;
-  const lpos = pd.x_start + i*(pd.w + pd.ml + pd.mb);
-  const tpos = pd.y_start;
+  const lpos = trace_data.x_start + i*(pd.w + pd.ml + pd.mb);
+  const tpos = trace_data.y_start;
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
@@ -134,20 +135,15 @@ const build_ui = (cfg) => {
       .attr("width", page_w)
       .attr("height", page_h);
 
-  const mode_select_w = scaff.mode_select.w;
-  const mode_select_h = scaff.mode_select.h;
-
-  const line_w = scaff.line.w;
-
   cfg.controls.modes.forEach((m, i)=>{
-    add_mode_choice(svg, {i: i, label: m.label, w: mode_select_w, h: mode_select_h, lw: line_w});
+    add_mode_choice(svg, {i: i, label: m.label, w: scaff.mode_select.w, h: scaff.mode_select.h, lw: scaff.line.w, fs: scaff.mode_select.fs });
   });
 
   const scaff_el = svg.append("g").attr("class", "scaffolding");
 
-  draw_line(scaff_el, { ends: [ [0, mode_select_h], [page_w, mode_select_h] ], lw:4 }, "scaffolding");
-
-  draw_line(scaff_el, { ends: [ [0, mode_select_h], [page_w, mode_select_h] ], lw:4 }, "scaffolding");
+  let hline_height = scaff.mode_select.h + 2;
+  draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
+  hline_height += 2;
 
   const traces = [];
 
@@ -166,9 +162,16 @@ const build_ui = (cfg) => {
       traces.push(add_param_trace(svg, {trace_i: traces.length,
                                         param_i: param_i,
                                         label: m.parameter,
+                                        x_start : 0,
+                                        y_start: hline_height,
                                         plot_dims: scaff.plots.trace}));
     }
   });
+
+  hline_height += 2 + scaff.plots.trace.mt + scaff.plots.trace.h + scaff.plots.trace.mb;
+  draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
+  hline_height += 2;
+
 
   // Append the SVG element.
   container.append(svg.node());

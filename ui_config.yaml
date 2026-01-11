@@ -13,10 +13,10 @@ noec:
       - { name: "Baseline", label: "Baseline" }
   ui:
     scaffolding:
-      page: { w: 1920, h: 1080 }
-      mode_select: { w: 240, h: 80 }
+      page: { w: 1512, h: 982 }
+      mode_select: { w: 120, h: 40, fs: 15 }
       plots:
-        trace: { x_start: 0, y_start: 90, w: 360, h: 80, ml: 50, mt: 20, mr: 5, mb: 5, nyticks: 5 }
+        trace: { w: 300, h: 50, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         osc_probability: { w: 640, h: 640, ml: 20, mt: 20, mr: 0, mb: 20 }
         likelihood: { w: 640, h: 640, ml: 20, mt: 20, mr: 0, mb: 20 }
       line: { w: 4 }
@@ -24,9 +24,8 @@ noec:
       traces:
         - { parameter: "Th13" }
         - { parameter: "Dm32" }
-        - { parameter: "dcp" }
         - { parameter: "Th23" }
-        - { parameter: "bollocks" }
+        - { parameter: "dcp" }
       osc_probability:
         - { title: "Disappearance", osc_channel: [14, 14] }
         - { title: "Appearance", osc_channel: [14, 12] }
