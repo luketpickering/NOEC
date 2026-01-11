@@ -17,29 +17,27 @@ print("Client TTY name:", client_tty)
 input("Press Enter to start device emulator")
 
 every_ms = 50.0
-do_update_prob = 1
-num_vals = 20
+do_update_prob = 0
+num_vals = 4
 vals = [0 for x in range(num_vals)]
+num_states = 5
+states = [0 for x in range(num_states)]
 tick = 0
 
 while True:
   rnint = random.randint(0,do_update_prob)
-  if (rnint == 0) or (tick % 20) == 0:
+  if rnint == 0:
 
-    if (rnint == 0):
-      key = random.randint(0,num_vals-1)
-      delta = random.randint(-127,385) if vals[key] <= 2047 else random.randint(-385,127)
-      nval =  min(max(vals[key] + delta,0),4095)
-      vals[key] =nval
+    key = random.randint(0,num_vals-1)
+    delta = random.randint(-127,385) if vals[key] <= 2047 else random.randint(-385,127)
+    nval =  min(max(vals[key] + delta,0),4095)
+    vals[key] =nval
 
     os.write(devicefd, b'\xf1')
-    os.write(devicefd, obj_to_msg({"cmd": "UPDATE", "tick": tick, "vals": vals}))
+    os.write(devicefd, obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "vals": vals}))
     os.write(devicefd, b'\xf2')
 
-    if (rnint == 0):
-      print(f"{tick} -- Update: values[{key}] = {vals[key]} ADC")
-    else:
-      print(f"{tick} -- Heartbeat")
+    print(f"{tick} -- Update: values[{key}] = {vals[key]} ADC")
 
   else:
     print(f"{tick} -- No update")

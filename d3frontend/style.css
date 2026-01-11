@@ -7,20 +7,35 @@ svg {
   overflow: visible;
 }
 
-path.ui.structure {
+.axis path, .tick line {
   stroke: #00FF00;
-  stroke-width: 4;
+  stroke-width: 2;
 }
 
-path.ui.mode_choice.chosen {
-  fill: #0000FF;
+.trace text {
+  font-family: 'Orbitron', sans-serif;
+  stroke: #00FF00;
+  fill: #00FF00;
 }
 
-path.ui.mode_choice.unchosen {
+.trace-series {
+  stroke-width: 1;
+  stroke: #00FF00;
+}
+
+path.scaffolding {
+  stroke: #00FF00;
+}
+
+.mode-choice path.mode-choice-bkg {
   fill: #1B4D3E;
 }
 
-text.ui.mode-label {
+.mode-choice.selected path.mode-choice-bkg {
+  fill: #0000FF;
+}
+
+.mode-choice text {
   font-family: 'Orbitron', sans-serif;
   text-anchor: middle;
   font-size: 30px;

@@ -1,0 +1,43 @@
+noec:
+  controls:
+    modes:
+      - { name: "control_simple", label: "Simple"}
+      - { name: "control_advanced", label: "Advanced"}
+      - { name: "demo_mcmc", label: "Demo: MCMC"}
+      - { name: "demo_gc", label: "Demo: GD"}
+    parameters:
+      - { label: "Dm32" }
+      - { label: "Th23" }
+      - { label: "dcp" }
+      - { label: "Th13" }
+      - { label: "Baseline" }
+  ui:
+    scaffolding:
+      page: { w: 1920, h: 1080 }
+      mode_select: { w: 240, h: 80 }
+      plots:
+        trace: { x_start: 0, y_start: 90, w: 360, h: 80, ml: 50, mt: 20, mr: 5, mb: 5, nyticks: 5 }
+        osc_probability: { w: 640, h: 640, ml: 20, mt: 20, mr: 0, mb: 20 }
+        likelihood: { w: 640, h: 640, ml: 20, mt: 20, mr: 0, mb: 20 }
+      line: { w: 4 }
+    plots:
+      traces:
+        - { parameter: "Dm32" }
+        - { parameter: "Th23" }
+        - { parameter: "dcp" }
+        - { parameter: "Th13" }
+      osc_probability:
+        - { title: "Disappearance", osc_channel: [14, 14] }
+        - { title: "Appearance", osc_channel: [14, 12] }
+      likelihood:
+        - { parameters: ["Dm32", "Th23"] }
+  input:
+    flux:
+      numode:
+        numu:
+          bin_edges: []
+          bin_content: []
+      nubarmode:
+        numu:
+          bin_edges: []
+          bin_content: []
