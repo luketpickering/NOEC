@@ -106,7 +106,7 @@ const add_param_trace = (parent_el, trace_data) => {
   };
   let path = build_path();
 
-  return {el:el, update: (d) => {
+  return {el:el, param_i: trace_data.param_i, update: (d) => {
     if(data.length >= xdomx){
       let opath = build_path();
       opath[0].transition().duration(1000).style("opacity",0).remove();
@@ -151,11 +151,23 @@ const build_ui = (cfg) => {
 
   const traces = [];
 
-  cfg.ui.plots.traces.forEach((m, i)=>{
-    traces.push(add_param_trace(svg, {trace_i: traces.length,
-                                      param_i:i,
-                                      label: m.parameter,
-                                      plot_dims: scaff.plots.trace}));
+  cfg.ui.plots.traces.forEach((m, i) => {
+
+    let param_i = null;
+    for (var par_it = 0; par_it < cfg.controls.parameters.length; par_it++) {
+      if (cfg.controls.parameters[par_it].name == m.parameter){
+        param_i = par_it;
+      }
+    }
+
+    if(param_i == null){
+      console.log(`Trace requested for parameter ${m.parameter} that could not be found`);
+    } else {
+      traces.push(add_param_trace(svg, {trace_i: traces.length,
+                                        param_i: param_i,
+                                        label: m.parameter,
+                                        plot_dims: scaff.plots.trace}));
+    }
   });
 
   // Append the SVG element.
@@ -167,6 +179,7 @@ const build_ui = (cfg) => {
 const websocket = new WebSocket("ws://localhost:5678/");
 
 let ui_els = null;
+let trace_param = [];
 
 websocket.onmessage = ({data}) => {
   const obj = JSON.parse(data);
@@ -174,8 +187,8 @@ websocket.onmessage = ({data}) => {
 
   if (obj.cmd == "ui_start"){
     console.log("Building UI");
-    ui_els = build_ui(obj.cfg.noec)
+    ui_els = build_ui(obj.cfg.noec);
   } else if(obj.cmd == "UPDATE"){
-    ui_els.traces.forEach( (m, i) => { m.update(obj.vals[i]); } );
+    ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
   }
 };

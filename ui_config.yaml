@@ -1,16 +1,16 @@
 noec:
-  controls:
+  controls: # the ordering of these lists assigns
     modes:
       - { name: "control_simple", label: "Simple"}
       - { name: "control_advanced", label: "Advanced"}
       - { name: "demo_mcmc", label: "Demo: MCMC"}
       - { name: "demo_gc", label: "Demo: GD"}
     parameters:
-      - { label: "Dm32" }
-      - { label: "Th23" }
-      - { label: "dcp" }
-      - { label: "Th13" }
-      - { label: "Baseline" }
+      - { name: "Dm32", label: "Dm32" }
+      - { name: "Th23", label: "Th23" }
+      - { name: "dcp", label: "dcp" }
+      - { name: "Th13", label: "Th13" }
+      - { name: "Baseline", label: "Baseline" }
   ui:
     scaffolding:
       page: { w: 1920, h: 1080 }
@@ -22,10 +22,11 @@ noec:
       line: { w: 4 }
     plots:
       traces:
-        - { parameter: "Dm32" }
-        - { parameter: "Th23" }
-        - { parameter: "dcp" }
         - { parameter: "Th13" }
+        - { parameter: "Dm32" }
+        - { parameter: "dcp" }
+        - { parameter: "Th23" }
+        - { parameter: "bollocks" }
       osc_probability:
         - { title: "Disappearance", osc_channel: [14, 14] }
         - { title: "Appearance", osc_channel: [14, 12] }
