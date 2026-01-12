@@ -31,6 +31,16 @@ const draw_text = (parent_el, text_data, cls=null) => {
   return el;
 }
 
+const draw_updatable_text = (parent_el, text_data, update, cls=null) => {
+  const el = parent_el.append("text");
+  el.attr("x", text_data.x);
+  el.attr("y", text_data.y);
+  if(cls){
+    el.attr("class", cls);
+  }
+  return {el: el, update: (v) => { el.text(update(v)); }};
+}
+
 const add_mode_choice = (parent_el, mode_choice_data) => {
   const i = mode_choice_data.i;
   const w = mode_choice_data.w;
@@ -50,7 +60,7 @@ const add_mode_choice = (parent_el, mode_choice_data) => {
                           [lpos + w + (lw/2.0), h] ],
                   lw: lw }, "scaffolding");
 
-  return el;
+  return { el:el, re: (i+1)*(w+lw) };
 }
 
 const add_param_trace = (parent_el, trace_data) => {
@@ -66,7 +76,8 @@ const add_param_trace = (parent_el, trace_data) => {
                       .attr("class", "trace")
                       .attr("id", `trace-${i}`);
 
-  el.append("text").attr("transform", `translate(${(pd.w + pd.ml)/2.0}, ${pd.mt*0.5})`).attr("text-anchor", "middle").text(trace_data.label);
+  el.append("text").attr("transform", `translate(${(pd.w + pd.ml)/2.0}, ${pd.mt*0.5})`)
+                   .attr("text-anchor", "middle").text(trace_data.label);
 
   // Declare the x (horizontal position) scale.
   const xdomx = 100;
@@ -76,7 +87,7 @@ const add_param_trace = (parent_el, trace_data) => {
 
   // Declare the y (vertical position) scale.
   const y = d3.scaleLinear()
-      .domain([0, 255])
+      .domain(trace_data.yrange)
       .range([pd.h, 0]);
 
   // Add the y-axis.
@@ -88,16 +99,20 @@ const add_param_trace = (parent_el, trace_data) => {
       .call(g => g.selectAll(".tick line").clone()
                   .attr("x2", pd.w)
                   .attr("stroke-opacity", 0.15));
-  yax.append("text")
-       .attr("text-anchor", "middle")
-       .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`).text("ADC");
 
-  let line = d3.line()
+  if(trace_data.units.length){
+    yax.append("text")
+         .attr("text-anchor", "middle")
+         .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
+         .text(`[${trace_data.units}]`);
+  }
+
+  const line = d3.line()
                .x((d, i) => { return x(i); })
                .y((d, i) => { return y(d); });
 
-  let data = [];
-  let build_path = () => {
+  const data = [];
+  const build_path = () => {
     const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
     const p = pg.append("path")
         .datum(data)
@@ -109,7 +124,7 @@ const add_param_trace = (parent_el, trace_data) => {
 
   return {el:el, param_i: trace_data.param_i, update: (d) => {
     if(data.length >= xdomx){
-      let opath = build_path();
+      const opath = build_path();
       opath[0].transition().duration(1000).style("opacity",0).remove();
 
       data.length = 0;
@@ -124,6 +139,89 @@ const add_param_trace = (parent_el, trace_data) => {
   }};
 }
 
+const add_osc_prob = (parent_el, prob_data) => {
+
+  const pd = prob_data.plot_dims;
+
+  const i = prob_data.prob_i;
+  const lpos = prob_data.x_start + i*(pd.w + pd.ml + pd.mb);
+  const tpos = prob_data.y_start;
+
+  const el = parent_el.append("g")
+                      .attr("transform", `translate(${lpos},${tpos})`)
+                      .attr("class", "prob")
+                      .attr("id", `prob-${i}`);
+
+  el.append("text").attr("transform", `translate(${(pd.w + pd.ml)/2.0}, ${pd.mt*0.5})`)
+                   .attr("text-anchor", "middle").text(prob_data.label);
+
+  // Declare the x (horizontal position) scale.
+  const x = d3.scaleLinear()
+      .domain(prob_data.xrange)
+      .range([0, pd.w]);
+
+  // Declare the y (vertical position) scale.
+  const y = d3.scaleLinear()
+      .domain(prob_data.yrange)
+      .range([pd.h, 0]);
+
+  const xax = el.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
+      .call(d3.axisBottom(x).ticks(pd.nxticks))
+
+  xax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${pd.w*0.5}, ${pd.mb*0.75})`)
+       .text(`Neutrino Energy [GeV]`);
+
+  // Add the y-axis.
+  const yax = el.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${pd.ml},${pd.mt})`)
+      .call(d3.axisLeft(y).ticks(pd.nyticks))
+
+  yax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
+       .text(`${prob_data.ylabel}`);
+
+  const nu_line = d3.line()
+               .x((d) => { return x(d[0]); })
+               .y((d) => { return y(d[1]); });
+
+  let nub_line = null;
+  if(prob_data.dobar){
+    nub_line = d3.line()
+                 .x((d) => { return x(d[0]); })
+                 .y((d) => { return y(d[2]); });
+  }
+
+  const data = [];
+  const build_path = (line, cls) => {
+    const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
+    const p = pg.append("path")
+        .datum(data)
+        .attr("class", cls)
+        .attr("d", line);
+    return [pg,p];
+  };
+  let nu_path = build_path(nu_line, "prob-series nu");
+  let nub_path = null;
+  if(nub_line){
+    nub_path = build_path(nub_line, "prob-series nub");
+  }
+
+  return {el:el, update: (d) => {
+    data.length = 0;
+    d.forEach((e)=>{data.push(e)});
+    nu_path[1].attr("d", nu_line);
+    if(nub_line){
+      nub_path[1].attr("d", nub_line);
+    }
+  }};
+}
+
 const build_ui = (cfg) => {
 
   const scaff =  cfg.ui.scaffolding;
@@ -135,8 +233,11 @@ const build_ui = (cfg) => {
       .attr("width", page_w)
       .attr("height", page_h);
 
+  const mode_choices = [];
   cfg.controls.modes.forEach((m, i)=>{
-    add_mode_choice(svg, {i: i, label: m.label, w: scaff.mode_select.w, h: scaff.mode_select.h, lw: scaff.line.w, fs: scaff.mode_select.fs });
+    mode_choices.push(add_mode_choice(svg, {i: i, label: m.label,
+      w: scaff.mode_select.w, h: scaff.mode_select.h, lw: scaff.line.w,
+      fs: scaff.mode_select.fs }));
   });
 
   const scaff_el = svg.append("g").attr("class", "scaffolding");
@@ -146,7 +247,6 @@ const build_ui = (cfg) => {
   hline_height += 2;
 
   const traces = [];
-
   cfg.ui.plots.traces.forEach((m, i) => {
 
     let param_i = null;
@@ -162,6 +262,8 @@ const build_ui = (cfg) => {
       traces.push(add_param_trace(svg, {trace_i: traces.length,
                                         param_i: param_i,
                                         label: m.parameter,
+                                        units: cfg.controls.parameters[param_i].units,
+                                        yrange: cfg.controls.parameters[param_i].range,
                                         x_start : 0,
                                         y_start: hline_height,
                                         plot_dims: scaff.plots.trace}));
@@ -172,11 +274,37 @@ const build_ui = (cfg) => {
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
   hline_height += 2;
 
+  const mode_choice_re = mode_choices[mode_choices.length-1].re;
+  const top_right_text = svg.append("g").attr("transform", `translate(${mode_choice_re}, 10)`);
+
+  const text_elements = [];
+  text_elements.push(draw_updatable_text(top_right_text, {x: 10, y: 10}, (v) => { return `uptime [ticks]: ${v}`; }, "ticker"));
+  text_elements.push(draw_updatable_text(top_right_text, {x: 225, y: 10}, (v) => { return `baseline [km]: ${v}`; }, "ticker"));
+
+  const osc_probability = [];
+  cfg.ui.plots.osc_probability.forEach((m, i) => {
+    osc_probability.push(add_osc_prob(svg, {prob_i: osc_probability.length,
+                                      label: m.parameter,
+                                      ylabel: m.ylabel,
+                                      xrange: m.xrange,
+                                      yrange: m.yrange,
+                                      x_start : 0,
+                                      y_start: hline_height,
+                                      dobar: m.dobar,
+                                      plot_dims: scaff.plots.osc_probability}));
+
+  });
+
+  hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
+  draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
+  hline_height += 2;
 
   // Append the SVG element.
   container.append(svg.node());
 
-  return {traces: traces};
+  return { traces: traces,
+           text_elements: text_elements,
+           osc_probability: osc_probability };
 }
 
 const websocket = new WebSocket("ws://localhost:5678/");
@@ -192,6 +320,11 @@ websocket.onmessage = ({data}) => {
     console.log("Building UI");
     ui_els = build_ui(obj.cfg.noec);
   } else if(obj.cmd == "UPDATE"){
+    // console.log(obj);
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
+    ui_els.text_elements[0].update(obj.tick);
+    ui_els.text_elements[1].update(obj.vals[4]);
+    ui_els.osc_probability[0].update(obj.osc_probs.numu);
+    ui_els.osc_probability[1].update(obj.osc_probs.nue);
   }
 };

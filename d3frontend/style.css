@@ -12,7 +12,7 @@ svg {
   stroke-width: 2;
 }
 
-.trace text {
+.trace text, .prob text {
   font-family: 'Orbitron', sans-serif;
   stroke: #00FF00;
   fill: #00FF00;
@@ -21,6 +21,25 @@ svg {
 .trace-series {
   stroke-width: 1;
   stroke: #00FF00;
+}
+
+.prob-series.nu {
+  stroke-width: 2;
+  stroke: #00FF00;
+  fill: None;
+}
+
+.prob-series.nub {
+  stroke-width: 1;
+  stroke: #FF0000;
+  fill: None;
+}
+
+text.ticker {
+  font-family: 'Orbitron', sans-serif;
+  text-anchor: left;
+  font-size: 15px;
+  fill: #00FF00;
 }
 
 path.scaffolding {

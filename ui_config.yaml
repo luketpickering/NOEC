@@ -6,18 +6,18 @@ noec:
       - { name: "demo_mcmc", label: "Demo: MCMC"}
       - { name: "demo_gc", label: "Demo: GD"}
     parameters:
-      - { name: "Dm32", label: "Dm32" }
-      - { name: "Th23", label: "Th23" }
-      - { name: "dcp", label: "dcp" }
-      - { name: "Th13", label: "Th13" }
-      - { name: "Baseline", label: "Baseline" }
+      - { name: "Dm32", label: "Dm32", units: "1E-3 eV", ADCMx: 255, range: [2.2, 2.6], true_val: 2.3}
+      - { name: "Th23", label: "Th23", units: "deg", ADCMx: 255, range: [35, 55], true_val: 40 }
+      - { name: "dcp", label: "dcp", units: "pi", ADCMx: 255, range: [-1, 1], true_val: -0.33 }
+      - { name: "Th13", label: "Th13", units: "deg", ADCMx: 255, range: [ 8.1, 8.9 ], true_val: 8.8 }
+      # - { name: "Baseline", label: "Baseline", units: "km", ADCMx: 255, range: [0, 6400] }
   ui:
     scaffolding:
       page: { w: 1512, h: 982 }
       mode_select: { w: 120, h: 40, fs: 15 }
       plots:
         trace: { w: 300, h: 50, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
-        osc_probability: { w: 640, h: 640, ml: 20, mt: 20, mr: 0, mb: 20 }
+        osc_probability: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
         likelihood: { w: 640, h: 640, ml: 20, mt: 20, mr: 0, mb: 20 }
       line: { w: 4 }
     plots:
@@ -27,8 +27,8 @@ noec:
         - { parameter: "Th23" }
         - { parameter: "dcp" }
       osc_probability:
-        - { title: "Disappearance", osc_channel: [14, 14] }
-        - { title: "Appearance", osc_channel: [14, 12] }
+        - { title: "Disappearance", ylabel: "P(numu -> numu)", xrange: [0,7], yrange: [0,1], osc_channel: [14, 14], dobar: False }
+        - { title: "Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True }
       likelihood:
         - { parameters: ["Dm32", "Th23"] }
   input:
