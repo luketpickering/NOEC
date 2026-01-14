@@ -320,7 +320,7 @@ websocket.onmessage = ({data}) => {
     console.log("Building UI");
     ui_els = build_ui(obj.cfg.noec);
   } else if(obj.cmd == "UPDATE"){
-    // console.log(obj);
+    console.log(obj);
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.vals[4]);

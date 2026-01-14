@@ -6,10 +6,10 @@ noec:
       - { name: "demo_mcmc", label: "Demo: MCMC"}
       - { name: "demo_gc", label: "Demo: GD"}
     parameters:
-      - { name: "Dm32", label: "Dm32", units: "1E-3 eV", ADCMx: 255, range: [2.2, 2.6], true_val: 2.3}
-      - { name: "Th23", label: "Th23", units: "deg", ADCMx: 255, range: [35, 55], true_val: 40 }
-      - { name: "dcp", label: "dcp", units: "pi", ADCMx: 255, range: [-1, 1], true_val: -0.33 }
-      - { name: "Th13", label: "Th13", units: "deg", ADCMx: 255, range: [ 8.1, 8.9 ], true_val: 8.8 }
+      - { name: "Dm32", label: "Dm32", units: "1E-3 eV", ADCMx: 62000, range: [2.2, 2.6], true_val: 2.3}
+      - { name: "Th23", label: "Th23", units: "deg", ADCMx: 62000, range: [35, 55], true_val: 40 }
+      - { name: "dcp", label: "dcp", units: "pi", ADCMx: 62000, range: [-1, 1], true_val: -0.33 }
+      # - { name: "Th13", label: "Th13", units: "deg", ADCMx: 255, range: [ 8.1, 8.9 ], true_val: 8.8 }
       # - { name: "Baseline", label: "Baseline", units: "km", ADCMx: 255, range: [0, 6400] }
   ui:
     scaffolding:
@@ -22,7 +22,7 @@ noec:
       line: { w: 4 }
     plots:
       traces:
-        - { parameter: "Th13" }
+        # - { parameter: "Th13" }
         - { parameter: "Dm32" }
         - { parameter: "Th23" }
         - { parameter: "dcp" }

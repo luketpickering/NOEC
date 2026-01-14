@@ -45,7 +45,8 @@ class InputProcessor:
     Ye = 0.5
     N_Newton = 0
     s12sq = 0.31
-    s13sq = pow(sin(vals[self.param_idx["Th13"]]*pi/180.0),2)
+    # s13sq = pow(sin(vals[self.param_idx["Th13"]]*pi/180.0),2)
+    s13sq = pow(sin(8.8*pi/180.0),2)
     s23sq = pow(sin(vals[self.param_idx["Th23"]]*pi/180.0),2)
     delta = vals[self.param_idx["dcp"]] * pi
     Dmsq21 = 7.5e-5 # eV^2

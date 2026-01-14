@@ -21,6 +21,7 @@ svg {
 .trace-series {
   stroke-width: 1;
   stroke: #00FF00;
+  fill: None;
 }
 
 .prob-series.nu {
