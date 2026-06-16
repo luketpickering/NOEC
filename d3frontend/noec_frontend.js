@@ -152,9 +152,6 @@ const add_osc_prob = (parent_el, prob_data) => {
                       .attr("class", "prob")
                       .attr("id", `prob-${i}`);
 
-  el.append("text").attr("transform", `translate(${(pd.w + pd.ml)/2.0}, ${pd.mt*0.5})`)
-                   .attr("text-anchor", "middle").text(prob_data.label);
-
   // Declare the x (horizontal position) scale.
   const x = d3.scaleLinear()
       .domain(prob_data.xrange)
@@ -222,6 +219,244 @@ const add_osc_prob = (parent_el, prob_data) => {
   }};
 }
 
+const add_3flavor_triangle = (parent_el, flvtri_data) => {
+
+  const pd = flvtri_data.plot_dims;
+  pd.h = pd.w/2.0 * Math.tan(Math.PI/3.0);
+
+  const i = flvtri_data.flvtri_i;
+  const lpos = flvtri_data.x_start + i*(pd.w + pd.ml + pd.mb);
+  const tpos = flvtri_data.y_start;
+
+  console.log(`translate(${lpos},${tpos})`);
+
+  const el = parent_el.append("g")
+                      .attr("transform", `translate(${lpos},${tpos})`)
+                      .attr("class", "trace")
+                      .attr("id", `trace-${i}`);
+
+  // Declare the x (horizontal position) scale.
+  const numu_frac_trans = d3.scaleLinear()
+                    .domain([0, 1])
+                    .range([0, pd.w]);
+
+  // Declare the y right (vertical position) scale.
+  const nue_frac_trans = d3.scaleLinear()
+                   .domain([0,1])
+                   .range([pd.w, 0]);
+
+  // Declare the y left (vertical position) scale.
+  const nutau_frac_trans = d3.scaleLinear()
+                   .domain([1,0])
+                   .range([pd.w, 0]);
+
+  //x is numu content
+  const xax = el.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
+      .call(d3.axisBottom(numu_frac_trans).ticks(pd.nxticks))
+
+  xax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${pd.w*0.5}, ${pd.mb*0.75})`)
+       .text(`numu fraction`);
+
+  const yax_shunt = pd.ml + (pd.w/2.0);
+
+  // Add the y-axis.
+  const yaxr = el.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${yax_shunt},${pd.mt}),rotate(-30)`)
+      .call(d3.axisRight(nue_frac_trans).ticks(pd.nyticks))
+
+  yaxr.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${pd.ml*0.75}, ${pd.h*0.5}),rotate(-270)`)
+       .text(`nue fraction`);
+
+  const yaxl = el.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${yax_shunt},${pd.mt}),rotate(30)`)
+      .call(d3.axisLeft(nutau_frac_trans).ticks(pd.nyticks))
+
+  yaxl.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
+       .text(`nutau fraction`);
+
+  const cospib3 = Math.cos(Math.PI/3.0);
+  const cospib6 = Math.cos(Math.PI/6.0);
+  const tanpib3 = Math.tan(Math.PI/3.0);
+  const sinpib3 = Math.sin(Math.PI/3.0);
+
+  const xtrns = numu_frac_trans;
+  const ytrns = d3.scaleLinear()
+                   .domain([0,0.5*tanpib3])
+                   .range([pd.h,0]);
+
+  const da = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
+
+  draw_line(da, { ends: [ [xtrns(0),ytrns(-0.2)], [xtrns(1),ytrns(-0.2)] ], lw:1 }, "scaffolding");
+  draw_line(da, { ends: [ [xtrns(0),ytrns(-0.215)], [xtrns(0),ytrns(-0.185)] ], lw:1 }, "scaffolding");
+
+  let get_intersect = (m,c,mp,cp) => {
+    const xslv = (cp - c)/(m - mp);
+    const yslv = m * xslv + c;
+    return [xslv, yslv];
+  };
+
+  let slvstart = get_intersect(tanpib3, 0, -tanpib3, 2*cospib6 * 0.2);
+  let slvend = get_intersect(0, 0.05, -tanpib3, 2*cospib6 * 0.2);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nutau");
+  slvstart = get_intersect(tanpib3, 0, -tanpib3, 2*cospib6 * 0.4);
+  slvend = get_intersect(0, 0.05, -tanpib3, 2*cospib6 * 0.4);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nutau");
+  slvstart = get_intersect(tanpib3, 0, -tanpib3, 2*cospib6 * 0.6);
+  slvend = get_intersect(0, 0.05, -tanpib3, 2*cospib6 * 0.6);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nutau");
+  slvstart = get_intersect(tanpib3, 0, -tanpib3, 2*cospib6 * 0.8);
+  slvend = get_intersect(0, 0.05, -tanpib3, 2*cospib6 * 0.8);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nutau");
+
+  slvstart = get_intersect(0, 0, tanpib3, -tanpib3 * 0.2);
+  slvend = get_intersect(-tanpib3,1.9*cospib6, tanpib3, -tanpib3 * 0.2);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding");
+  slvstart = get_intersect(0, 0, tanpib3, -tanpib3 * 0.4);
+  slvend = get_intersect(-tanpib3,1.9*cospib6, tanpib3, -tanpib3 * 0.4);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding");
+  slvstart = get_intersect(0, 0, tanpib3, -tanpib3 * 0.6);
+  slvend = get_intersect(-tanpib3,1.9*cospib6, tanpib3, -tanpib3 * 0.6);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding");
+  slvstart = get_intersect(0, 0, tanpib3, -tanpib3 * 0.8);
+  slvend = get_intersect(-tanpib3,1.9*cospib6, tanpib3, -tanpib3 * 0.8);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding");
+
+  slvstart = get_intersect(tanpib3, -0.1, 0, sinpib3 * 0.2);
+  slvend = get_intersect(-tanpib3, 2*cospib6, 0, sinpib3 * 0.2);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nue");
+  slvstart = get_intersect(tanpib3, -0.1, 0, sinpib3 * 0.4);
+  slvend = get_intersect(-tanpib3, 2*cospib6, 0, sinpib3 * 0.4);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nue");
+  slvstart = get_intersect(tanpib3, -0.1, 0, sinpib3 * 0.6);
+  slvend = get_intersect(-tanpib3, 2*cospib6, 0, sinpib3 * 0.6);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nue");
+  slvstart = get_intersect(tanpib3, -0.1, 0, sinpib3 * 0.8);
+  slvend = get_intersect(-tanpib3, 2*cospib6, 0, sinpib3 * 0.8);
+  draw_line(da, { ends: [ [xtrns(slvstart[0]),ytrns(slvstart[1])], [xtrns(slvend[0]),ytrns(slvend[1])] ], lw:1 }, "scaffolding nue");
+
+
+  let sa = da.append("g");
+
+  let travelel = draw_updatable_text(da, {x: xtrns(0.25), y: ytrns(-0.3)}, (v) => { return `numu travel [km]: ${v}`; }, "travel_counter")
+  let travel_L_km = 0;
+  let lprobs = { "prob":null, "probbar":null };
+
+  let add_point = (d, cls) => {
+
+    const c = -tanpib3 * d.frac_numu;
+    const cp = 2*cospib6 * (d.frac_nue + d.frac_numu);
+
+    const slv = get_intersect(tanpib3, c, -tanpib3, cp);
+
+    const xv = xtrns(slv[0]);
+    const yv = ytrns(slv[1]);
+
+    sa.append("path")
+      .attr("class", `flvtripoint ${cls}`)
+      .attr("transform", `translate(${xv},${yv})`)
+      .attr("d", d3.symbol(d.symbol,d.ssize)).transition().duration(d.livetime).style("opacity",0).remove();
+  };
+
+  return {el:el, update: (d, L_max) => {
+
+    if((travel_L_km > 0) && (travel_L_km > d.L)){ // server has started neutrino again
+      let point_data = { "frac_nue": lprobs.prob[0][0],
+                         "frac_numu": lprobs.prob[0][1],
+                         "livetime": 10000,
+                         "symbol": d3.symbolWye,
+                         "ssize": 30 };
+
+      add_point(point_data, "nue");
+
+      point_data.frac_nue = lprobs.probbar[0][0];
+      point_data.frac_numu = lprobs.probbar[0][1];
+      add_point(point_data, "nueb");
+
+      point_data.frac_nue = lprobs.prob[1][0];
+      point_data.frac_numu = lprobs.prob[1][1];
+      add_point(point_data, "numu");
+
+      point_data.frac_nue = lprobs.prob[2][0];
+      point_data.frac_numu = lprobs.prob[2][1];
+      add_point(point_data, "nutau");
+
+      const pipx = xtrns(1);
+      const pipy = ytrns(-0.2);
+      sa.append("path")
+        .attr("class", `flvtripoint numu`)
+        .attr("transform", `translate(${pipx},${pipy})`)
+        .attr("d", d3.symbol(d3.symbolWye,40)).transition().duration(10000).style("opacity",0).remove();
+    }
+
+    lprobs.prob = d.prob;
+    lprobs.probbar = d.probbar;
+    travel_L_km = d.L;
+
+    travelel.update(`${travel_L_km}`);
+
+    let point_data = {
+              "frac_nue": lprobs.prob[0][0],
+              "frac_numu": lprobs.prob[0][1],
+              "livetime": 1000,
+              "symbol": d3.symbolCircle,
+              "ssize": 10 };
+
+
+    add_point(point_data, "nue");
+
+    point_data.frac_nue = lprobs.probbar[0][0];
+    point_data.frac_numu = lprobs.probbar[0][1];
+    add_point(point_data, "nueb");
+
+    point_data.frac_nue = lprobs.prob[1][0];
+    point_data.frac_numu = lprobs.prob[1][1];
+    add_point(point_data, "numu");
+
+    point_data.frac_nue = lprobs.prob[2][0];
+    point_data.frac_numu = lprobs.prob[2][1];
+    add_point(point_data, "nutau");
+
+    const opacity_trans = (p) => {
+      // return 1 - ((Math.log(1.1 - p) + 1)/(Math.log(1.1) - Math.log(0.1)));
+      // return (Math.exp(p)/(Math.exp(1) - Math.exp(0))) - 1;
+      return p;
+    };
+
+    const pipx = xtrns(travel_L_km/L_max);
+    let pipy = ytrns(-0.185);
+    sa.append("path")
+      .attr("class", `flvtripoint nue`)
+      .attr("transform", `translate(${pipx},${pipy})`)
+      .attr("opacity", opacity_trans(lprobs.prob[1][0]))
+      .attr("d", d3.symbol(d3.symbolCircle,10)).transition().duration(500).style("opacity",0).remove();
+
+    pipy = ytrns(-0.2);
+    sa.append("path")
+      .attr("class", `flvtripoint numu`)
+      .attr("transform", `translate(${pipx},${pipy})`)
+      .attr("opacity", opacity_trans(lprobs.prob[1][1]))
+      .attr("d", d3.symbol(d3.symbolCircle,10)).transition().duration(500).style("opacity",0).remove();
+
+    pipy = ytrns(-0.215);
+    sa.append("path")
+      .attr("class", `flvtripoint nutau`)
+      .attr("transform", `translate(${pipx},${pipy})`)
+      .attr("opacity", opacity_trans(lprobs.prob[1][2]))
+      .attr("d", d3.symbol(d3.symbolCircle,10)).transition().duration(500).style("opacity",0).remove();
+  }};
+
+}
+
 const build_ui = (cfg) => {
 
   const scaff =  cfg.ui.scaffolding;
@@ -284,7 +519,6 @@ const build_ui = (cfg) => {
   const osc_probability = [];
   cfg.ui.plots.osc_probability.forEach((m, i) => {
     osc_probability.push(add_osc_prob(svg, {prob_i: osc_probability.length,
-                                      label: m.parameter,
                                       ylabel: m.ylabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
@@ -299,18 +533,30 @@ const build_ui = (cfg) => {
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
   hline_height += 2;
 
+  const flvtriangles = [];
+  cfg.ui.plots.flvtriangles.forEach((m, i) => {
+    flvtriangles.push(add_3flavor_triangle(svg, {flvtri_i: flvtriangles.length,
+                                      x_start : 0,
+                                      y_start: hline_height,
+                                      plot_dims: scaff.plots.flvtriangles}));
+
+  });
+
   // Append the SVG element.
   container.append(svg.node());
 
   return { traces: traces,
            text_elements: text_elements,
-           osc_probability: osc_probability };
+           osc_probability: osc_probability,
+           flvtriangles: flvtriangles };
 }
 
 const websocket = new WebSocket("ws://localhost:5678/");
 
 let ui_els = null;
 let trace_param = [];
+
+let once = true;
 
 websocket.onmessage = ({data}) => {
   const obj = JSON.parse(data);
@@ -320,11 +566,15 @@ websocket.onmessage = ({data}) => {
     console.log("Building UI");
     ui_els = build_ui(obj.cfg.noec);
   } else if(obj.cmd == "UPDATE"){
-    console.log(obj);
-    ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
-    ui_els.text_elements[0].update(obj.tick);
-    ui_els.text_elements[1].update(obj.vals[4]);
-    ui_els.osc_probability[0].update(obj.osc_probs.numu);
-    ui_els.osc_probability[1].update(obj.osc_probs.nue);
+    // console.log(obj);
+    // ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
+    // ui_els.text_elements[0].update(obj.tick);
+    // ui_els.text_elements[1].update(obj.L_km);
+    // ui_els.osc_probability[0].update(obj.osc_probs.numu);
+    // ui_els.osc_probability[1].update(obj.osc_probs.nue);
+    // if(once){
+      ui_els.flvtriangles[0].update(obj.trans_prob_max, obj.L_km);
+    //   once = false;
+    // }
   }
 };

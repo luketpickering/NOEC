@@ -1,19 +1,41 @@
 # MicroPython, for RP2xx0 on Maker Pi Pico
 from time import sleep
 import asyncio
-from machine import Pin, I2C
+from machine import Pin, I2C, SPI
 from neopixel import NeoPixel
 import random
 
 import mcp23017
-from PicoADC16 import PicoADC16
 
 i2c = I2C(1, scl=Pin(19), sda=Pin(18))
-print(f"i2c scan results: {i2c.scan()}")
+print(f"i2c results: {i2c.scan()}")
 mcp = mcp23017.MCP23017(i2c, 32)
 mcp[0].output(1)
 
-adc = PicoADC16(cs_pins=[1,17])
+spi_adc = SPI(0, baudrate=1_000_000, polarity=0, phase=0, sck=2, mosi=3, miso=4)
+adc_a_cs = Pin(1, mode=Pin.OUT, value=1)
+adc_b_cs = Pin(17, mode=Pin.OUT, value=1)
+
+bufs = [bytearray(3), bytearray(3)]
+bufs[0][0] = 0x01
+bufs[0][1] = (0x01 << 7)
+
+def readadc(chan):
+    cspin = adc_b_cs if (chan >= 8) else adc_a_cs
+    bchan = (chan % 8)
+
+    bufs[0][1] = (0x01 << 7) | (bchan << 4)
+
+    print(f"TX: 0b{bufs[0][0]:08b}, 0b{bufs[0][1]:08b}, 0b{bufs[0][2]:08b}")
+    cspin(0)
+    spi_adc.write_readinto(bufs[0],bufs[1])
+    cspin(1)
+    print(f"RX: 0b{bufs[1][0]:08b}, 0b{bufs[1][1]:08b}, 0b{bufs[1][2]:08b}")
+
+    return int( ((bufs[1][1] & 0x03) << 8 ) | bufs[1][2])
+
+def readall():
+    return [readadc(i) for i in range(16)]
 
 neopin = Pin(16, Pin.OUT, value=0)
 sleep(0.001)  # reset WS2812B
@@ -37,9 +59,9 @@ async def blinkled():
 
 loop = asyncio.get_event_loop()
 
-async def readallforever():
+def readallforever():
     while True:
-        print(adc.read([0,1,2,3,4]))
+        print(readall())
         await asyncio.sleep(0.25)
 
 tasks = []

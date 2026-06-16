@@ -37,9 +37,8 @@ class InputProcessor:
 
       self.param_maps.append(mapper(min, max, adcmx))
 
-  def calc_probs(self, vals):
+  def calc_probs(self, vals, L):
 
-    L = 1300 # km
     Es = np.logspace(-0.3,0.8,100) #GeV
     rho = 3 # g/cc
     Ye = 0.5
@@ -59,7 +58,39 @@ class InputProcessor:
                                       delta, Dmsq21, Dmsq31,
                                       L, -E, rho, Ye, N_Newton) for E in Es ]
 
-    return Es, osc_probs, bosc_probs;
+    return Es, osc_probs, bosc_probs
+
+  def calc_state_probs(self, tick, vals, L_max):
+
+    nticks = 100
+    L = L_max * float(tick % nticks)/float(nticks) # km
+    E = 2.3 #GeV
+    rho = 3 # g/cc
+    Ye = 0.5
+    N_Newton = 0
+    s12sq = 0.31
+    # s13sq = pow(sin(vals[self.param_idx["Th13"]]*pi/180.0),2)
+    s13sq = pow(sin(8.8*pi/180.0),2)
+    s23sq = pow(sin(vals[self.param_idx["Th23"]]*pi/180.0),2)
+    delta = vals[self.param_idx["dcp"]] * pi
+    Dmsq21 = 7.5e-5 # eV^2
+    Dmsq31 = vals[self.param_idx["Dm32"]] * 1e-3 # eV^2
+
+    probm = Probability_Matter_LBL(s12sq, s13sq, s23sq,
+                                      delta, Dmsq21, Dmsq31,
+                                      L, E, rho, Ye, N_Newton)
+
+    probbar = Probability_Matter_LBL(s12sq, s13sq, s23sq,
+                                      delta, Dmsq21, Dmsq31,
+                                      L, -E, rho, Ye, N_Newton)
+
+    return { "prob": [ [probm[0][0],probm[0][1],probm[0][2]],
+                       [probm[1][0],probm[1][1],probm[1][2]],
+                       [probm[2][0],probm[2][1],probm[2][2]] ],
+             "probbar": [ [probbar[0][0],probbar[0][1],probbar[0][2]],
+                          [probbar[1][0],probbar[1][1],probbar[1][2]],
+                          [probbar[2][0],probbar[2][1],probbar[2][2]] ],
+             "L": L }
 
   def process(self, data):
     data["vals"] = []
@@ -67,10 +98,13 @@ class InputProcessor:
       if i < len(self.param_maps):
         data["vals"].append(self.param_maps[i](v))
 
-    Es, osc_probs, bosc_probs = self.calc_probs(data["vals"])
+    data["L_km"] = 1300
+
+    Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     data["osc_probs"] = {}
     data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1], bosc_probs[i][1][1]] for i in range(len(osc_probs))]
     data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0], bosc_probs[i][1][0]] for i in range(len(osc_probs))]
+    data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
     return data
 
 async def forward_to_ws(serial_device, baud, websocket):

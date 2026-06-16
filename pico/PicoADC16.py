@@ -14,15 +14,14 @@ class PicoADC16:
 
   def _readadc(self, chan):
     cs = self.chip_select[chan // 8]
-    bank_chan = (chan % 8)
 
-    self.buf_in[1] = (0x1 << 7) | (bank_chan << 4)
+    self.buf_in[1] = (0x1 << 7) | ((chan % 8) << 4)
 
     cs(0)
     spi_adc.write_readinto(self.buf_in, self.buf_out)
     cs(1)
 
-    return int( ((self.buf_out[1] & 0x03) << 8 ) | self.buf_out[2])
+    return int( ((self.buf_out[1] & 0x3) << 8 ) | self.buf_out[2])
 
   def readadc_u10(channels, samples=200):
     vals = [self._readadc(c) for c in channels]

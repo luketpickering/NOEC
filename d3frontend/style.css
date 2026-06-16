@@ -31,7 +31,7 @@ svg {
 }
 
 .prob-series.nub {
-  stroke-width: 1;
+  stroke-width: 2;
   stroke: #FF0000;
   fill: None;
 }
@@ -45,6 +45,40 @@ text.ticker {
 
 path.scaffolding {
   stroke: #00FF00;
+}
+
+.flvtripoint.nue {
+  stroke: #0000FF;
+  fill: #0000FF;
+}
+
+.flvtripoint.nueb {
+  stroke: #FF0000;
+  fill: #FF0000;
+}
+
+.flvtripoint.numu {
+  stroke: #00FF00;
+  fill: #00FF00;
+}
+
+path.nutau {
+  stroke: #FF00FF;
+  fill: #FF00FF;
+}
+
+path.nue {
+  stroke: #0000FF;
+  fill: #0000FF;
+}
+
+.flvtripoint.nutau {
+  stroke: #FF00FF;
+  fill: #FF00FF;
+}
+
+.travel_counter {
+  text-anchor: left;
 }
 
 .mode-choice path.mode-choice-bkg {
