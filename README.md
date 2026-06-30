@@ -2,6 +2,43 @@
 
 Neutrino Oscillation Experiment Control (outreach MCU project).
 
+## Quick Start
+
+To start the [device emulator](#emulation), the [backend](#backend-on-host)
+process, and the [frontend](#frontend) web server, you need 3 terminals:
+
+```bash
+#terminal 1 - front end web server
+# pwd = /path/to/NOEC
+cd d3frontend
+python3 -m http.server
+```
+
+```bash
+#terminal 2 - device emulator
+# pwd = /path/to/NOEC
+source venv/bin/activate
+./noec_device_emulator.py
+# this will start, tell you a device tty and wait for input
+# you need to start the backend (noec_ws_server.py, below) passing
+# this location and then return to this terminal and hit enter to connect
+# up all the pipes. Example output below
+#
+# Client TTY name: /dev/ttys004
+# Press Enter to start device emulator
+```
+
+```bash
+#terminal 3 - device emulator
+# pwd = /path/to/NOEC
+source venv/bin/activate
+# Run the below passing the tty device location shown in terminal 2, e.g.
+./noec_ws_server.py /dev/ttys004
+# now hit enter on terminal 2
+```
+
+If this all appears to work, then you can open a browser to `http://localhost:8000`.
+
 ## Device
 
 Currently, the device is programmed in micropython. All micropython source can
@@ -38,12 +75,13 @@ physical device plugged in and running. There is a simple device emulator,
 and sends messages in the same format down a emulated serial device that the
 host application can connect to as if it were the real device.
 
-## Host
+## Backend on Host
 
 The host computer recieves messages from the device, performs any neccessary
 processing, and then sends messages to the front end via a websocket. The host
 code is written in python and contained in the root directory of this
 repository. The main programme is [noec_host.py](noec_host.py).
+There is a potentially useful [requirements.txt] file for creating a venv from.
 
 ## Frontend
 
@@ -78,5 +116,27 @@ More details on the calculation and implementation of nufast can be found
 [here](https://github.com/PeterDenton/NuFast-LBL/tree/v1.1) and
 [here](https://arxiv.org/abs/2405.02400).
 
+### Neutrino Interactions
+
+### Detector Response
+
+### Parametric Fitting
+
+#### Histograms
+
+#### Response functions
+
+#### Goodness of Fit
+
+#### Error Estimation
 
 ## Ideas For Where To Go Next
+
+* Make the startup easier, should be able to start 1 script that spawns a
+  webserver thread and takes an optional argument to spawn a emulator thread
+  and open the pty pair, or take a serial device vfs location to recieve from
+  the device.
+* What might we want to try and 'teach' users?
+  + Parametric inference or 'how we measure things in HEP' - Obvious links to ML/'AI'
+    - Add automatic samplers that can run in parallel to inputs from the device. Could gamify finding the 'best' parameter values
+    - Can demonstrate different sampling techniques: gradient descent, MCMC, many more complex options.
