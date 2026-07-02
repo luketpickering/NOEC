@@ -5,6 +5,10 @@ noec:
       - { name: "control_advanced", label: "Advanced"}
       - { name: "demo_mcmc", label: "Demo: MCMC"}
       - { name: "demo_gc", label: "Demo: GD"}
+    status:
+      - { name: "uptime", label: "uptime [ticks]: "}
+      - { name: "baseline", label: "baseline [km]: "}
+      - { name: "likelihood", label: "likelihood: "}
     parameters:
       - { name: "Dm32", label: "Dm32", units: "1E-3 eV", ADCMx: 255, range: [2.2, 2.6], true_val: 2.3}
       - { name: "Th23", label: "Th23", units: "deg", ADCMx: 255, range: [35, 55], true_val: 40 }
