@@ -46,7 +46,7 @@ def startEmulator( devicefd,clientfd,client_tty):
         os.write(devicefd, obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals}))
         os.write(devicefd, b'\xf2')
 
-        print(f"{tick} -- Update: vals = {vals}")
+       # print(f"{tick} -- Update: vals = {vals}")
 
 
         time.sleep(every_ms/1000.0)

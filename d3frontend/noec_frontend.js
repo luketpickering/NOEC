@@ -194,7 +194,7 @@ const add_osc_prob = (parent_el, prob_data) => {
                  .y((d) => { return y(d[2]); });
   }
 
-  const data = [];
+    const data = [];
   const build_path = (line, cls) => {
     const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
     const p = pg.append("path")
@@ -203,12 +203,20 @@ const add_osc_prob = (parent_el, prob_data) => {
         .attr("d", line);
     return [pg,p];
   };
-  let nu_path = build_path(nu_line, "prob-series nu");
+
+  let truth_class = ""
+  //console.log(prob_data)
+ // console.log("truth"+ prob_data.truth)
+  if (prob_data.truth){
+    truth_class = " truth"
+  }
+    
+  let nu_path = build_path(nu_line, "prob-series nu"+truth_class);
   let nub_path = null;
   if(nub_line){
-    nub_path = build_path(nub_line, "prob-series nub");
+    nub_path = build_path(nub_line, "prob-series nub"+truth_class);
   }
-
+  
   return {el:el, update: (d) => {
     data.length = 0;
     d.forEach((e)=>{data.push(e)});
@@ -457,6 +465,9 @@ const add_3flavor_triangle = (parent_el, flvtri_data) => {
 
 }
 
+
+
+//build UI starts here
 const build_ui = (cfg) => {
 
   const scaff =  cfg.ui.scaffolding;
@@ -485,6 +496,7 @@ const build_ui = (cfg) => {
   cfg.ui.plots.traces.forEach((m, i) => {
 
     let param_i = null;
+    //console.log(cfg.controls.parameters.length)
     for (var par_it = 0; par_it < cfg.controls.parameters.length; par_it++) {
       if (cfg.controls.parameters[par_it].name == m.parameter){
         param_i = par_it;
@@ -515,9 +527,13 @@ const build_ui = (cfg) => {
   const text_elements = [];
   text_elements.push(draw_updatable_text(top_right_text, {x: 10, y: 10}, (v) => { return `uptime [ticks]: ${v}`; }, "ticker"));
   text_elements.push(draw_updatable_text(top_right_text, {x: 225, y: 10}, (v) => { return `baseline [km]: ${v}`; }, "ticker"));
+  text_elements.push(draw_updatable_text(top_right_text, {x:500, y: 10}, (v) => { return `likelihood: ${v}`; }, "ticker"));
+
+  
 
   const osc_probability = [];
   cfg.ui.plots.osc_probability.forEach((m, i) => {
+    console.log(m)
     osc_probability.push(add_osc_prob(svg, {prob_i: osc_probability.length,
                                       ylabel: m.ylabel,
                                       xrange: m.xrange,
@@ -525,7 +541,8 @@ const build_ui = (cfg) => {
                                       x_start : 0,
                                       y_start: hline_height,
                                       dobar: m.dobar,
-                                      plot_dims: scaff.plots.osc_probability}));
+					    plot_dims: scaff.plots.osc_probability,
+					    truth:m.truth}));
 
   });
 
@@ -550,6 +567,7 @@ const build_ui = (cfg) => {
            osc_probability: osc_probability,
            flvtriangles: flvtriangles };
 }
+//Build UI ends here
 
 const websocket = new WebSocket("ws://localhost:5678/");
 
@@ -566,12 +584,15 @@ websocket.onmessage = ({data}) => {
     console.log("Building UI");
     ui_els = build_ui(obj.cfg.noec);
   } else if(obj.cmd == "UPDATE"){
-    // console.log(obj);
-    // ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
-    // ui_els.text_elements[0].update(obj.tick);
-    // ui_els.text_elements[1].update(obj.L_km);
-    // ui_els.osc_probability[0].update(obj.osc_probs.numu);
-    // ui_els.osc_probability[1].update(obj.osc_probs.nue);
+    //console.log(obj);
+    ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
+    ui_els.text_elements[0].update(obj.tick);
+    ui_els.text_elements[1].update(obj.L_km);
+    ui_els.text_elements[2].update(obj.osc_probs.likelihood)
+    ui_els.osc_probability[0].update(obj.osc_probs.numu);
+    ui_els.osc_probability[1].update(obj.osc_probs.nue);
+    ui_els.osc_probability[2].update(obj.true_osc_probs.nue);
+    //console.log(ui_els)
     // if(once){
       ui_els.flvtriangles[0].update(obj.trans_prob_max, obj.L_km);
     //   once = false;

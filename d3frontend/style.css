@@ -36,6 +36,20 @@ svg {
   fill: None;
 }
 
+.prob-series.nu.truth {
+  stroke-width: 2;
+  stroke: #00FFFF;
+  fill: None;
+}
+
+.prob-series.nub.truth {
+  stroke-width: 2;
+  stroke: #FF00FF;
+  fill: None;
+}
+
+
+
 text.ticker {
   font-family: 'Orbitron', sans-serif;
   text-anchor: left;
