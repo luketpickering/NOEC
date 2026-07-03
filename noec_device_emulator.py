@@ -42,9 +42,8 @@ def startEmulator( devicefd,clientfd,client_tty):
         delta = min(update_rate_ADC, abs(vals_goal_adc[i] - vals[i]))
         vals[i] += delta * (1 if vals_goal_adc[i] > vals[i] else -1)
 
-        os.write(devicefd, b'\xf1')
-        os.write(devicefd, obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals}))
-        os.write(devicefd, b'\xf2')
+        os.write(devicefd,str.encode('{{') +  obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals})+ str.encode('}}'))
+        os.write(devicefd, str.encode('\n'))
 
        # print(f"{tick} -- Update: vals = {vals}")
 
