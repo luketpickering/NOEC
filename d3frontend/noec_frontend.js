@@ -205,8 +205,6 @@ const add_osc_prob = (parent_el, prob_data) => {
   };
 
   let truth_class = ""
-  //console.log(prob_data)
- // console.log("truth"+ prob_data.truth)
   if (prob_data.truth){
     truth_class = " truth"
   }
@@ -525,9 +523,13 @@ const build_ui = (cfg) => {
   const top_right_text = svg.append("g").attr("transform", `translate(${mode_choice_re}, 10)`);
 
   const text_elements = [];
-  text_elements.push(draw_updatable_text(top_right_text, {x: 10, y: 10}, (v) => { return `uptime [ticks]: ${v}`; }, "ticker"));
-  text_elements.push(draw_updatable_text(top_right_text, {x: 225, y: 10}, (v) => { return `baseline [km]: ${v}`; }, "ticker"));
-  text_elements.push(draw_updatable_text(top_right_text, {x:500, y: 10}, (v) => { return `likelihood: ${v}`; }, "ticker"));
+  cfg.controls.status.forEach((m, i) => {
+    text_elements.push(draw_updatable_text(top_right_text, {x: 10+ 200*i, y: 10}, (v) => { return (m.label + ` ${v}`); }, "ticker"));
+  });
+  
+  //text_elements.push(draw_updatable_text(top_right_text, {x: 10, y: 10}, (v) => { return `uptime [ticks]: ${v}`; }, "ticker"));
+  //text_elements.push(draw_updatable_text(top_right_text, {x: 225, y: 10}, (v) => { return `baseline [km]: ${v}`; }, "ticker"));
+  //text_elements.push(draw_updatable_text(top_right_text, {x:500, y: 10}, (v) => { return `likelihood: ${v}`; }, "ticker"));
 
   
 
@@ -578,11 +580,13 @@ let once = true;
 
 websocket.onmessage = ({data}) => {
   const obj = JSON.parse(data);
-  // console.log(obj);
+ 
 
   if (obj.cmd == "ui_start"){
     console.log("Building UI");
+    console.log(obj);
     ui_els = build_ui(obj.cfg.noec);
+     
   } else if(obj.cmd == "UPDATE"){
     //console.log(obj);
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
