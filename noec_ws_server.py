@@ -45,10 +45,34 @@ class InputProcessor:
       if i < len(self.param_maps):
         true_vals_mapped.append(self.param_maps[i](v))
     print(true_vals_mapped)
-    self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs(true_vals_mapped,1300)
+    self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs_hist(true_vals_mapped,1300, 30)
+    
   def calc_probs(self, vals, L):
 
     Es = np.logspace(-0.3,0.8,100) #GeV
+    rho = 3 # g/cc
+    Ye = 0.5
+    N_Newton = 0
+    s12sq = 0.31
+    # s13sq = pow(sin(vals[self.param_idx["Th13"]]*pi/180.0),2)
+    s13sq = pow(sin(8.8*pi/180.0),2)
+    s23sq = pow(sin(vals[self.param_idx["Th23"]]*pi/180.0),2)
+    delta = vals[self.param_idx["dcp"]] * pi
+    Dmsq21 = 7.5e-5 # eV^2
+    Dmsq31 = vals[self.param_idx["Dm32"]] * 1e-3 # eV^2
+
+    osc_probs = [ Probability_Matter_LBL(s12sq, s13sq, s23sq,
+                                      delta, Dmsq21, Dmsq31,
+                                      L, E, rho, Ye, N_Newton) for E in Es ]
+    bosc_probs = [ Probability_Matter_LBL(s12sq, s13sq, s23sq,
+                                      delta, Dmsq21, Dmsq31,
+                                      L, -E, rho, Ye, N_Newton) for E in Es ]
+
+    return Es, osc_probs, bosc_probs
+  
+  def calc_probs_hist(self, vals, L, num_bins):
+    Es = np.logspace(-0.3,0.8,num_bins) #GeV
+    print("Es:", Es) 
     rho = 3 # g/cc
     Ye = 0.5
     N_Newton = 0
@@ -106,12 +130,13 @@ class InputProcessor:
 
   def process(self, data):
     data["vals"] = []
-   # print(data["ADCs"])
+    print(data["ADCs"])
     for i, v in enumerate(data["ADCs"]):
       if i < len(self.param_maps):
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = 1300
+    data["hist"] = True
 
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     data["osc_probs"] = {}
@@ -123,6 +148,11 @@ class InputProcessor:
     data["osc_probs"]["likelihood"] = self.calculate_likelihood(np.array(data["osc_probs"]["nue"][1]),np.array(data["true_osc_probs"]["nue"][1]))
     return data
 
+def float_range(start, stop, step):
+    while start < stop:
+        yield start
+        start += step
+  
 async def forward_to_ws(serial_device, baud, websocket):
   host = NOECHost(serial_device, baud)
   with open("ui_config.yaml", 'r') as yaml_in:

@@ -185,13 +185,14 @@ const add_osc_prob = (parent_el, prob_data) => {
 
   const nu_line = d3.line()
                .x((d) => { return x(d[0]); })
-               .y((d) => { return y(d[1]); });
+        .y((d) => { return y(d[1]); })
+
 
   let nub_line = null;
   if(prob_data.dobar){
     nub_line = d3.line()
                  .x((d) => { return x(d[0]); })
-                 .y((d) => { return y(d[2]); });
+      .y((d) => { return y(d[2]); });
   }
 
     const data = [];
@@ -215,12 +216,24 @@ const add_osc_prob = (parent_el, prob_data) => {
     nub_path = build_path(nub_line, "prob-series nub"+truth_class);
   }
   
-  return {el:el, update: (d) => {
+  return {el:el, update: (d,step) => {
+    if (step){
+      nu_line.curve(d3.curveStepAfter);
+    }
+    else{
+      nu_line.curve(d3.curveNatural);
+    }
     data.length = 0;
     d.forEach((e)=>{data.push(e)});
     nu_path[1].attr("d", nu_line);
     if(nub_line){
       nub_path[1].attr("d", nub_line);
+      if (step){
+	nub_line.curve(d3.curveStepAfter);
+      }
+      else{
+	nub_line.curve(d3.curveNatural);
+      }
     }
   }};
 }
@@ -593,10 +606,10 @@ websocket.onmessage = ({data}) => {
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
     ui_els.text_elements[2].update(obj.osc_probs.likelihood)
-    ui_els.osc_probability[0].update(obj.osc_probs.numu);
-    ui_els.osc_probability[1].update(obj.osc_probs.nue);
-    ui_els.osc_probability[2].update(obj.true_osc_probs.nue);
-    //console.log(ui_els)
+    ui_els.osc_probability[0].update(obj.osc_probs.numu,false);
+    ui_els.osc_probability[1].update(obj.osc_probs.nue,false);
+    ui_els.osc_probability[2].update(obj.true_osc_probs.nue,true);
+    console.log(ui_els)
     // if(once){
       ui_els.flvtriangles[0].update(obj.trans_prob_max, obj.L_km);
     //   once = false;
