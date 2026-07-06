@@ -46,6 +46,9 @@ class InputProcessor:
         true_vals_mapped.append(self.param_maps[i](v))
     print(true_vals_mapped)
     self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs_hist(true_vals_mapped,1300, 30)
+    self.e_noise = np.array([random.uniform(-0.025,0.025) for _ in range(30)])
+    self.e_bnoise = np.array([random.uniform(-0.025,0.025) for _ in range(30)])
+    self.mu_noise = np.array([random.uniform(-0.025,0.025) for _ in range(30)])
     
   def calc_probs(self, vals, L):
 
@@ -132,6 +135,7 @@ class InputProcessor:
     return round(100/np.exp(self.calculate_likelihood(predicted,actual)/2),0)
 
   def process(self, data):
+    print(data)
     data["vals"] = []
     print(data["ADCs"])
     for i, v in enumerate(data["ADCs"]):
@@ -140,15 +144,20 @@ class InputProcessor:
     #print(data["vals"])
     data["L_km"] = 1300
 
+    
+
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     data["osc_probs"] = {}
     data["true_osc_probs"] = {}
     data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1], bosc_probs[i][1][1]] for i in range(len(osc_probs))]
     data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0], bosc_probs[i][1][0]] for i in range(len(osc_probs))]
-    data["true_osc_probs"]["nue"]= [[self.true_Es[i], self.true_osc_probs[i][1][0], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
+    if data["noise"]:
+      data["true_osc_probs"]["nue"]= [[self.true_Es[i], self.true_osc_probs[i][1][0]+self.e_noise[i], self.true_bosc_probs[i][1][0]+ self.e_bnoise[i]] for i in range(len(self.true_osc_probs))]
+    else:
+      data["true_osc_probs"]["nue"]= [[self.true_Es[i], self.true_osc_probs[i][1][0], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
+      print(len(self.true_osc_probs))
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
     data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array(data["osc_probs"]["nue"][1]),np.array(data["true_osc_probs"]["nue"][1]))
-    print(1/np.exp(self.calculate_likelihood(np.array(data["osc_probs"]["nue"][1]),np.array(data["true_osc_probs"]["nue"][1]))/2))
     return data
 
 def float_range(start, stop, step):

@@ -9,10 +9,11 @@ from noec_utils import msg_to_obj
 class NOECHost:
   def __init__(self, serial_device, baud=9600):
     self.ser = serial.Serial(serial_device, baud)
-    self.previous = json.loads('{"cmd": "UPDATE", "tick": 0, "states": [0,0,0,0,0], "ADCs": [0,0,0,0]}')
+    self.previous = json.loads('{"cmd": "UPDATE", "tick": 0, "states": [0,0,0,0,0], "ADCs": [0,0,0,0], "noise": false, "hist":false}')
 
   def read_message(self):
     obj = self.ser.readline()[2:-3]
+    print(obj)
     obj = obj.decode("utf-8")
     if obj != "" and obj is not None and obj[0] == "{" and obj[-1] == "}":
       self.previous = json.loads(str(obj))
