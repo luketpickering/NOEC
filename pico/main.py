@@ -13,6 +13,8 @@ i2c = I2C(1, scl=Pin(19), sda=Pin(18))
 mcp = mcp23017.MCP23017(i2c, 32)
 mcp[0].output(1)
 
+
+hist_pin = Pin(15, Pin.IN)
 spi_adc = SPI(0, baudrate=1_000_000, polarity=0, phase=0, sck=2, mosi=3, miso=4)
 adc_a_cs = Pin(1, mode=Pin.OUT, value=1)
 adc_b_cs = Pin(17, mode=Pin.OUT, value=1)
@@ -45,7 +47,7 @@ while True:
     num_states = 5
     states = [0 for x in range(num_states)]
     
-    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals}))
+    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "hist": bool(hist_pin.value())}))
     tick +=1
     print(tick)
     sleep(0.25)

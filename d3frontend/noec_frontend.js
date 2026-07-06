@@ -602,13 +602,14 @@ websocket.onmessage = ({data}) => {
      
   } else if(obj.cmd == "UPDATE"){
     //console.log(obj);
+    console.log(obj.hist)
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
     ui_els.text_elements[2].update(obj.osc_probs.likelihood)
     ui_els.osc_probability[0].update(obj.osc_probs.numu,false);
     ui_els.osc_probability[1].update(obj.osc_probs.nue,false);
-    ui_els.osc_probability[2].update(obj.true_osc_probs.nue,true);
+    ui_els.osc_probability[2].update(obj.true_osc_probs.nue,obj.hist);
     console.log(ui_els)
     // if(once){
       ui_els.flvtriangles[0].update(obj.trans_prob_max, obj.L_km);

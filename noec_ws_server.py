@@ -128,6 +128,9 @@ class InputProcessor:
   def calculate_likelihood(self, predicted,actual):
     return np.sum(np.power(predicted -actual ,2)/actual)
 
+  def calc_lh_disp(self, predicted,actual):
+    return round(100/np.exp(self.calculate_likelihood(predicted,actual)/2),0)
+
   def process(self, data):
     data["vals"] = []
     print(data["ADCs"])
@@ -136,7 +139,6 @@ class InputProcessor:
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = 1300
-    data["hist"] = True
 
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     data["osc_probs"] = {}
@@ -145,7 +147,8 @@ class InputProcessor:
     data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0], bosc_probs[i][1][0]] for i in range(len(osc_probs))]
     data["true_osc_probs"]["nue"]= [[self.true_Es[i], self.true_osc_probs[i][1][0], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
-    data["osc_probs"]["likelihood"] = self.calculate_likelihood(np.array(data["osc_probs"]["nue"][1]),np.array(data["true_osc_probs"]["nue"][1]))
+    data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array(data["osc_probs"]["nue"][1]),np.array(data["true_osc_probs"]["nue"][1]))
+    print(1/np.exp(self.calculate_likelihood(np.array(data["osc_probs"]["nue"][1]),np.array(data["true_osc_probs"]["nue"][1]))/2))
     return data
 
 def float_range(start, stop, step):
