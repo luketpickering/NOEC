@@ -148,11 +148,7 @@ class InputProcessor:
 
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     data["osc_probs"] = {}
-    data["true_osc_probs"] = {}
-    data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1], bosc_probs[i][1][1]] for i in range(len(osc_probs))]
-    data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0], bosc_probs[i][1][0]] for i in range(len(osc_probs))]
     if data["noise"]:
-      data["true_osc_probs"]["nue"]= [[self.true_Es[i], self.true_osc_probs[i][1][0]+self.e_noise[i], self.true_bosc_probs[i][1][0]+ self.e_bnoise[i]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1]] for i in range(len(osc_probs))]
       data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0]] for i in range(len(osc_probs))]
       data["osc_probs"]["bnue"] = [ [Es[i], bosc_probs[i][1][0]] for i in range(len(osc_probs))]
@@ -166,7 +162,6 @@ class InputProcessor:
       data["osc_probs"]["numu_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][1]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["nue_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["bnue_true"] = [ [self.true_Es[i], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
-      data["true_osc_probs"]["nue"]= [[self.true_Es[i], self.true_osc_probs[i][1][0], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
     data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array(data["osc_probs"]["nue"][1]),np.array(data["osc_probs"]["nue_true"][1]))
     return data
