@@ -12,6 +12,7 @@ from noec_host import NOECHost
 from nufast import Probability_Matter_LBL
 
 from math import pow, sin, pi
+from scipy import optimize
 
 import numpy as np
 import random
@@ -39,16 +40,16 @@ class InputProcessor:
 
       self.param_maps.append(mapper(min, max, adcmx))
 
-      true_vals = [random.randint(0,255) for i in range(4)]
-      true_vals_mapped = []
+    true_vals = [random.randint(0,255) for i in range(4)]
+    self.true_vals_mapped = []
     for i, v in enumerate(true_vals):
       if i < len(self.param_maps):
-        true_vals_mapped.append(self.param_maps[i](v))
-    print(true_vals_mapped)
-    self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs_hist(true_vals_mapped,1300, 30)
-    self.e_noise = np.array([random.uniform(-0.025,0.025) for _ in range(30)])
-    self.e_bnoise = np.array([random.uniform(-0.025,0.025) for _ in range(30)])
-    self.mu_noise = np.array([random.uniform(-0.1,0.1) for _ in range(30)])
+       self. true_vals_mapped.append(self.param_maps[i](v))
+    self.true_bin_num = 30
+    self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs_hist(self.true_vals_mapped,1300,  self.true_bin_num)
+    self.e_noise = np.array([random.uniform(-0.1,0.1)*i[1][0] for i in self.true_osc_probs])
+    self.e_bnoise = np.array([random.uniform(-0.1,0.1)*i[1][0] for i in self.true_bosc_probs])
+    self.mu_noise = np.array([random.uniform(-0.1,0.1)*i[1][1] for i in self.true_osc_probs])
     
   def calc_probs(self, vals, L):
 
@@ -74,7 +75,7 @@ class InputProcessor:
     return Es, osc_probs, bosc_probs
   
   def calc_probs_hist(self, vals, L, num_bins):
-    Es = np.logspace(-0.3,0.8,num_bins) #GeV
+    Es = np.linspace(0.5,6.4,num_bins) #GeV
     print("Es:", Es) 
     rho = 3 # g/cc
     Ye = 0.5
@@ -132,7 +133,22 @@ class InputProcessor:
     return np.sum(np.power(predicted -actual ,2)/actual)
 
   def calc_lh_disp(self, predicted,actual):
-    return round(100/np.exp(self.calculate_likelihood(predicted,actual)/2),0)
+    return round(100/np.exp(self.calculate_likelihood(predicted,actual)),0)
+
+
+  """
+  def ml_probs_func(self,Es, a, b,c,d):
+    Es, osc_probs, bosc_probs = self.calc_probs_hist([a,b,c,d],1300,  self.true_bin_num)
+    return np.array([osc_probs[i][1][0] for i in range(osc_probs)])
+
+  def ml_fit_to_true(self,time_iter=1, noise = False):
+    intermediate_params = []
+    p0 = [1e-3,0.1,0.01,0.1,1e-4,1]
+    params, cov = optimize.curve_fit(self.ml_probs_func, self.true_Es,np.array([self.true_osc_probs[i][1][0] for i in range(len(self.true_osc_probs))]), p0, callback=(lambda x: intermediate_params.append(x)))
+    print(params)
+    for i in intermediate_params:
+      print(i)
+  """ 
 
   def process(self, data):
     print(data)
@@ -143,11 +159,13 @@ class InputProcessor:
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = 1300
-
+    data["start_ml"] = True
     
-
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
+    Es_h, osc_probs_h, bosc_probs_h = self.calc_probs_hist(data["vals"], data["L_km"], self.true_bin_num)
     data["osc_probs"] = {}
+
+    #self.ml_fit_to_true()
     if data["noise"]:
       data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1]] for i in range(len(osc_probs))]
       data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0]] for i in range(len(osc_probs))]
@@ -155,6 +173,7 @@ class InputProcessor:
       data["osc_probs"]["numu_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][1]+self.mu_noise[i]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["nue_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][0]+self.e_noise[i]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["bnue_true"] = [ [self.true_Es[i], self.true_bosc_probs[i][1][0] + self.e_bnoise[i]] for i in range(len(self.true_osc_probs))]
+      data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array([osc_probs_h[i][1][0] for i in range(len(osc_probs_h))]),np.array([data["osc_probs"]["nue_true"][i][1] +self.e_noise[i] for i in range(len(self.true_osc_probs))]))
     else:
       data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1]] for i in range(len(osc_probs))]
       data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0]] for i in range(len(osc_probs))]
@@ -162,8 +181,10 @@ class InputProcessor:
       data["osc_probs"]["numu_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][1]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["nue_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["bnue_true"] = [ [self.true_Es[i], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
+      data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array([osc_probs_h[i][1][0] for i in range(len(osc_probs_h))]),np.array([data["osc_probs"]["nue_true"][i][1]for i in range(len(self.true_osc_probs))]))
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
-    data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array(data["osc_probs"]["nue"][1]),np.array(data["osc_probs"]["nue_true"][1]))
+  
+   # print(data["osc_probs"]["likelihood"])
     return data
 
 def float_range(start, stop, step):
