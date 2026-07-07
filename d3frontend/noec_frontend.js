@@ -139,7 +139,98 @@ const add_param_trace = (parent_el, trace_data) => {
   }};
 }
 
-const add_osc_prob = (parent_el, prob_data) => {
+const add_osc_prob= (parent_el, prob_data) => {
+
+  const pd = prob_data.plot_dims;
+
+  const i = prob_data.prob_i;
+  const lpos = prob_data.x_start + i*(pd.w + pd.ml + pd.mb);
+  const tpos = prob_data.y_start;
+
+  const el = parent_el.append("g")
+                      .attr("transform", `translate(${lpos},${tpos})`)
+                      .attr("class", "prob")
+                      .attr("id", `prob-${i}`);
+
+  // Declare the x (horizontal position) scale.
+  const x = d3.scaleLinear()
+      .domain(prob_data.xrange)
+      .range([0, pd.w]);
+
+  // Declare the y (vertical position) scale.
+  const y = d3.scaleLinear()
+      .domain(prob_data.yrange)
+      .range([pd.h, 0]);
+
+  const xax = el.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
+      .call(d3.axisBottom(x).ticks(pd.nxticks))
+
+  xax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${pd.w*0.5}, ${pd.mb*0.75})`)
+       .text(`Neutrino Energy [GeV]`);
+
+  // Add the y-axis.
+  const yax = el.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${pd.ml},${pd.mt})`)
+      .call(d3.axisLeft(y).ticks(pd.nyticks))
+
+  yax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
+       .text(`${prob_data.ylabel}`);
+
+  const nu_line = d3.line()
+               .x((d) => { return x(d[0]); })
+        .y((d) => { return y(d[1]); })
+
+
+  let nu_line_true = null;
+  if(prob_data.dotrue){
+    nu_line_true = d3.line()
+                 .x((d) => { return x(d[0]); })
+      .y((d) => { return y(d[1]); });
+  }
+
+  const data = [];
+  const true_data = []
+  const build_path = (line, cls, d_source) => {
+    const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
+    const p = pg.append("path")
+        .datum(d_source)
+        .attr("class", cls)
+        .attr("d", line);
+    return [pg,p];
+  };
+    
+  let nu_path = build_path(nu_line, "prob-series nu",data);
+  let nu_path_true = null;
+  if(nu_line_true){
+    nu_path_true = build_path(nu_line_true, "prob-series nutrue", true_data);
+  }
+  
+  return {el:el, update: (d,d_t,step) => {
+    data.length = 0;
+    d.forEach((e)=>{data.push(e)});
+    nu_path[1].attr("d", nu_line);
+    if(nu_line_true){
+      true_data.length = 0;
+      d_t.forEach((e)=>{true_data.push(e)});
+      nu_path_true[1].attr("d", nu_line_true);
+      if (step){
+	nu_line_true.curve(d3.curveStepAfter);
+      }
+      else{
+	nu_line_true.curve(d3.curveNatural);
+      }
+    }
+  }};
+}
+
+const add_osc_prob_combined = (parent_el, prob_data) => {
 
   const pd = prob_data.plot_dims;
 
@@ -247,7 +338,7 @@ const add_3flavor_triangle = (parent_el, flvtri_data) => {
   const lpos = flvtri_data.x_start + i*(pd.w + pd.ml + pd.mb);
   const tpos = flvtri_data.y_start;
 
-  console.log(`translate(${lpos},${tpos})`);
+  //console.log(`translate(${lpos},${tpos})`);
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
@@ -555,7 +646,8 @@ const build_ui = (cfg) => {
                                       yrange: m.yrange,
                                       x_start : 0,
                                       y_start: hline_height,
-                                      dobar: m.dobar,
+					    dobar: m.dobar,
+					    dotrue:m.dotrue,
 					    plot_dims: scaff.plots.osc_probability,
 					    truth:m.truth}));
 
@@ -603,13 +695,14 @@ websocket.onmessage = ({data}) => {
   } else if(obj.cmd == "UPDATE"){
     //console.log(obj);
     console.log(obj.hist)
+    console.log(obj.osc_probs.numu)
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
     ui_els.text_elements[2].update(obj.osc_probs.likelihood)
-    ui_els.osc_probability[0].update(obj.osc_probs.numu,false);
-    ui_els.osc_probability[1].update(obj.osc_probs.nue,false);
-    ui_els.osc_probability[2].update(obj.true_osc_probs.nue,obj.hist);
+    ui_els.osc_probability[0].update(obj.osc_probs.numu,obj.osc_probs.numu_true,obj.hist);
+    ui_els.osc_probability[1].update(obj.osc_probs.nue,obj.osc_probs.nue_true,obj.hist);
+    ui_els.osc_probability[2].update(obj.osc_probs.bnue,obj.osc_probs.bnue_true,obj.hist);
     console.log(ui_els)
     // if(once){
       ui_els.flvtriangles[0].update(obj.trans_prob_max, obj.L_km);

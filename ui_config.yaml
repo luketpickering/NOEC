@@ -32,9 +32,9 @@ noec:
         - { parameter: "Th23" }
         - { parameter: "dcp" }
       osc_probability:
-        - { title: "Disappearance", ylabel: "P(numu -> numu)", xrange: [0,7], yrange: [0,1], osc_channel: [14, 14], dobar: False, truth: False }
-        - { title: "Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True, truth: False }
-        - { title: "True Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True, truth: True }
+        - { title: "Disappearance", ylabel: "P(numu -> numu)", xrange: [0,7], yrange: [0,1], osc_channel: [14, 14], dobar: False, truth: False, dotrue: True }
+        - { title: "Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True, truth: False, dotrue: True }
+        - { title: "Appearance Bar", ylabel: "P(bnumu -> bnue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True, truth: False, dotrue: True }
       flvtriangles:
         - {  }
       likelihood:
