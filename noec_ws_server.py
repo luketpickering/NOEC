@@ -4,6 +4,7 @@ import json
 import yaml
 import asyncio
 import sys
+import copy
 
 from websockets.asyncio.server import serve
 
@@ -16,6 +17,8 @@ from scipy import optimize
 
 import numpy as np
 import random
+import threading
+import time
 
 class InputProcessor:
   def __init__(self, cfg):
@@ -23,6 +26,7 @@ class InputProcessor:
 
     self.param_maps = []
     self.param_idx = {}
+    self.load_thread = None
     
 
     for i, pdef in enumerate(self.cfg["noec"]["controls"]["parameters"]):
@@ -76,7 +80,7 @@ class InputProcessor:
   
   def calc_probs_hist(self, vals, L, num_bins):
     Es = np.linspace(0.5,6.4,num_bins) #GeV
-    print("Es:", Es) 
+    #print("Es:", Es) 
     rho = 3 # g/cc
     Ye = 0.5
     N_Newton = 0
@@ -130,10 +134,51 @@ class InputProcessor:
              "L": L }
 
   def calculate_likelihood(self, predicted,actual):
-    return np.sum(np.power(predicted -actual ,2)/actual)
+    try:
+      return np.sum(np.power(predicted -actual ,2)/actual)
+    except:
+      return 0
 
   def calc_lh_disp(self, predicted,actual):
     return round(100/np.exp(self.calculate_likelihood(predicted,actual)),0)
+
+  def slow_data(self):
+    actual_osc_probs = copy.deepcopy(self.true_osc_probs)
+    actual_bosc_probs = copy.deepcopy(self.true_bosc_probs)
+    for i in range(self.true_bin_num):
+       self.true_osc_probs[i][1][0] = 0.0000000001
+       self.true_osc_probs[i][1][1] = 0.0000000001
+       self.true_bosc_probs[i][1][0] = 0.0000000001
+    print(self.true_osc_probs)
+    iters_without_hit = 0
+    while iters_without_hit <250:
+      print(iters_without_hit)
+      particle = random.randint(0,2)
+      bin = random.randint(0,self.true_bin_num-1)
+      if particle == 0:
+        change = min(0.1,actual_osc_probs[bin][1][1])
+        print(change)
+        actual_osc_probs[bin][1][1] -= change
+        self.true_osc_probs[bin][1][1] += change
+        print(self.true_osc_probs[bin][1][1])
+      elif particle == 1:
+        change = min(0.01,actual_osc_probs[bin][1][0])
+        print(change)
+        actual_osc_probs[bin][1][0] -= change
+        self.true_osc_probs[bin][1][0] += change
+        print(self.true_osc_probs[bin][1][0])
+      else:
+        change = min(0.01,actual_bosc_probs[bin][1][0])
+        print(change)
+        actual_bosc_probs[bin][1][0] -= change
+        self.true_bosc_probs[bin][1][0] += change
+        print(self.true_bosc_probs[bin][1][0])
+      if change == 0:
+        iters_without_hit +=1
+      time.sleep(0.1)
+    self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs_hist(self.true_vals_mapped,1300,  self.true_bin_num)
+    
+    
 
 
   """
@@ -151,19 +196,25 @@ class InputProcessor:
   """ 
 
   def process(self, data):
-    print(data)
+    #print(data)
     data["vals"] = []
-    print(data["ADCs"])
+    #print(data["ADCs"])
     for i, v in enumerate(data["ADCs"]):
       if i < len(self.param_maps):
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = 1300
-    data["start_ml"] = True
+    #data["start_ml"] = True
+    data["slow_load"] = True
     
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     Es_h, osc_probs_h, bosc_probs_h = self.calc_probs_hist(data["vals"], data["L_km"], self.true_bin_num)
     data["osc_probs"] = {}
+
+    if self.load_thread == None or not self.load_thread.is_alive():
+      print("Thread started")
+      self.load_thread = threading.Thread(target = self.slow_data)
+      self.load_thread.start()
 
     #self.ml_fit_to_true()
     if data["noise"]:
