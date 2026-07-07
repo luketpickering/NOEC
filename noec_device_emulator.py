@@ -31,6 +31,7 @@ def startEmulator( devicefd,clientfd,client_tty):
   states = [0 for x in range(num_states)]
   tick = 0
   hist = False
+  noise = False
 
   while True:
 
@@ -44,12 +45,16 @@ def startEmulator( devicefd,clientfd,client_tty):
         vals[i] += delta * (1 if vals_goal_adc[i] > vals[i] else -1)
 
     hist_random = random.randint(0,do_update_prob)
+    noise_random = random.randint(0,do_update_prob)
     print(hist_random)
     if hist_random == 0:
       hist = not hist
+
+    if noise_random ==0:
+      noise = not noise
         
 
-    os.write(devicefd,str.encode('{{') +  obj_to_msg({"cmd": "UPDATE","hist":hist, "tick": tick, "states": states, "ADCs": vals})+ str.encode('}}'))
+    os.write(devicefd,str.encode('{{') +  obj_to_msg({"cmd": "UPDATE","hist":hist, "tick": tick, "states": states, "ADCs": vals, "noise":noise})+ str.encode('}}'))
     os.write(devicefd, str.encode('\n'))
 
        # print(f"{tick} -- Update: vals = {vals}")
