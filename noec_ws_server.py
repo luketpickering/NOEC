@@ -254,6 +254,7 @@ class InputProcessor:
       data["osc_probs"]["nue_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["bnue_true"] = [ [self.true_Es[i], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
       data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array([osc_probs_h[i][1][0] for i in range(len(osc_probs_h))]),np.array([data["osc_probs"]["nue_true"][i][1]for i in range(len(self.true_osc_probs))]))
+    data["osc_probs"]["true_likelihood"] = data["osc_probs"]["likelihood"]
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
   
    # print(data["osc_probs"]["likelihood"])

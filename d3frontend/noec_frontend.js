@@ -586,13 +586,30 @@ let trace_param = [];
 let startTime = Date.now();
 let once = true;
 let likelihood = 0
+let true_likelihood = 0
+let noise = false
+let hist = false
 $(document).on("keypress", function( event ){
+  let score
   if (event.code == "Enter"){
     let currentTime = Date.now();
-    let score = Math.round((1/((currentTime - startTime)/1000))*likelihood);
-    alert("Score is: "+  score);
+    if ((currentTime - startTime) > 300000){
+      score = 1
+    }
+    else{
+      score = 300- ((currentTime - startTime)/1000)
+      console.log("Time multiplier: " + 300- ((currentTime - startTime)/1000))
+    }
+    score *= true_likelihood
+    console.log("Likelihood  multiplier: " + true_likelihood)
+    if (noise){
+      score *=1.5
+    }
+    if (hist){
+      score *=1.5
+    }
+    alert("Score is: "+  Math.round(score));
   }
-  
 });
 
 websocket.onmessage = ({data}) => {
@@ -611,6 +628,9 @@ websocket.onmessage = ({data}) => {
     //console.log(obj.hist)
     //console.log(obj.osc_probs.numu)
     likelihood = obj.osc_probs.likelihood
+    true_likelihood = obj.osc_probs.true_likelihood
+    noise = obj.noise
+    hist = obj.hist
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
