@@ -542,7 +542,7 @@ const build_ui = (cfg) => {
 
   const osc_probability = [];
   cfg.ui.plots.osc_probability.forEach((m, i) => {
-    console.log(m)
+    //console.log(m)
     osc_probability.push(add_osc_prob(svg, {prob_i: osc_probability.length,
                                       ylabel: m.ylabel,
                                       xrange: m.xrange,
@@ -583,8 +583,17 @@ const websocket = new WebSocket("ws://localhost:5678/");
 
 let ui_els = null;
 let trace_param = [];
-
+let startTime = Date.now();
 let once = true;
+let likelihood = 0
+$(document).on("keypress", function( event ){
+  if (event.code == "Enter"){
+    let currentTime = Date.now();
+    let score = Math.round((1/((currentTime - startTime)/1000))*likelihood);
+    alert("Score is: "+  score);
+  }
+  
+});
 
 websocket.onmessage = ({data}) => {
   const obj = JSON.parse(data);
@@ -594,11 +603,14 @@ websocket.onmessage = ({data}) => {
     console.log("Building UI");
     console.log(obj);
     ui_els = build_ui(obj.cfg.noec);
+   
+    
      
   } else if(obj.cmd == "UPDATE"){
-    //console.log(obj);
-    console.log(obj.hist)
-    console.log(obj.osc_probs.numu)
+    console.log(obj);
+    //console.log(obj.hist)
+    //console.log(obj.osc_probs.numu)
+    likelihood = obj.osc_probs.likelihood
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
@@ -606,7 +618,10 @@ websocket.onmessage = ({data}) => {
     ui_els.osc_probability[0].update(obj.osc_probs.numu,obj.osc_probs.numu_true,obj.hist);
     ui_els.osc_probability[1].update(obj.osc_probs.nue,obj.osc_probs.nue_true,obj.hist);
     ui_els.osc_probability[2].update(obj.osc_probs.bnue,obj.osc_probs.bnue_true,obj.hist);
-    console.log(ui_els)
+    if (obj.start_ml){
+      ui_els.osc_probability[3].update(obj.osc_probs.mlnue,obj.osc_probs.nue_true,obj.hist);
+    }
+    //console.log(ui_els)
     // if(once){
       ui_els.flvtriangles[0].update(obj.trans_prob_max, obj.L_km);
     //   once = false;
