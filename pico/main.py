@@ -14,10 +14,10 @@ mcp = mcp23017.MCP23017(i2c, 32)
 mcp[0].output(1)
 
 
-hist_pin = Pin(15, Pin.IN)
-noise_pin = Pin(14, Pin.IN)
-ml_pin = Pin(13, Pin.IN)
-slow_load_pin = Pin(12, Pin.IN)
+hist_pin = Pin(12, Pin.IN)
+noise_pin = Pin(13, Pin.IN)
+ml_pin = Pin(14, Pin.IN)
+slow_load_pin = Pin(15, Pin.IN)
 
 spi_adc = SPI(0, baudrate=1_000_000, polarity=0, phase=0, sck=2, mosi=3, miso=4)
 adc_a_cs = Pin(1, mode=Pin.OUT, value=1)
