@@ -80,7 +80,7 @@ class InputProcessor:
 
     return Es, osc_probs, bosc_probs
   
-  def calc_probs_hist(self, vals, L, num_bins):
+  def calc_probs_hist(self, vals, L, num_bins, correct_for_disp=True):
     Es = np.linspace(0.5,6.4,num_bins) #GeV
     #print("Es:", Es) 
     rho = 3 # g/cc
@@ -100,7 +100,8 @@ class InputProcessor:
     bosc_probs = [ Probability_Matter_LBL(s12sq, s13sq, s23sq,
                                       delta, Dmsq21, Dmsq31,
                                       L, -E, rho, Ye, N_Newton) for E in Es ]
-
+    bin_width = Es[1]-Es[0]
+    Es -= (bin_width/2)
     return Es, osc_probs, bosc_probs
 
   def calc_state_probs(self, tick, vals, L_max):
@@ -211,7 +212,20 @@ class InputProcessor:
       self.ml_nue_probs = self.ml_probs_func_display(*i)
       time.sleep(time_iter)
 
+  def hist_view(self):
+    pass
+
+  def add_noise(self):
+    pass
+
+  def remove_noise(self):
+    pass 
+
+  def curve_view(self):
+    pass
+
   def process(self, data):
+    print(data)
     #print(data)
     data["vals"] = []
     #print(data["ADCs"])
@@ -220,21 +234,21 @@ class InputProcessor:
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = 1300
-    data["start_ml"] = True
-    data["slow_load"] = False
     
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     Es_h, osc_probs_h, bosc_probs_h = self.calc_probs_hist(data["vals"], data["L_km"], self.true_bin_num)
     data["osc_probs"] = {}
+
+    
   
     if data["slow_load"]:
-      if self.load_thread == None or not self.load_thread.is_alive():
+      if self.load_thread == None:
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data)
         self.load_thread.start()
-    
+        
     if data["start_ml"]:       
-      if self.ml_thread == None or not self.ml_thread.is_alive():
+      if self.ml_thread == None:
         print("Thread started")
         self.ml_thread = threading.Thread(target = self.ml_fit_to_true)
         self.ml_thread.start()
