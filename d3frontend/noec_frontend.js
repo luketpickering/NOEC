@@ -149,8 +149,8 @@ const add_osc_prob= (parent_el, prob_data) => {
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
-                      .attr("class", "prob")
-                      .attr("id", `prob-${i}`);
+                      .attr("class", prob_data.cls)
+                      .attr("id", prob_data.cls + `-${i}`);
 
   // Declare the x (horizontal position) scale.
   const x = d3.scaleLinear()
@@ -211,6 +211,15 @@ const add_osc_prob= (parent_el, prob_data) => {
   if(nu_line_true){
     nu_path_true = build_path(nu_line_true, "prob-series nutrue", true_data);
   }
+  console.log(prob_data.title)
+  console.log(pd.h)
+  console.log(tpos)
+  //aw_text(el, {x:pd.w*0.5, y: 20, text:prob_data.title});
+  el.append("text")
+    .attr("x", (pd.w/2))                    
+    .attr("y", 20)
+       .attr("text-anchor", "middle") 
+    .text(prob_data.title);
   
   return {el:el, update: (d,d_t,step) => {
     data.length = 0;
@@ -539,10 +548,9 @@ const build_ui = (cfg) => {
   //text_elements.push(draw_updatable_text(top_right_text, {x:500, y: 10}, (v) => { return `likelihood: ${v}`; }, "ticker"));
 
   
-
+  console.log("Hline height"+ hline_height)
   const osc_probability = [];
   cfg.ui.plots.osc_probability.forEach((m, i) => {
-    //console.log(m)
     osc_probability.push(add_osc_prob(svg, {prob_i: osc_probability.length,
                                       ylabel: m.ylabel,
                                       xrange: m.xrange,
@@ -552,12 +560,30 @@ const build_ui = (cfg) => {
 					    dobar: m.dobar,
 					    dotrue:m.dotrue,
 					    plot_dims: scaff.plots.osc_probability,
-					    truth:m.truth}));
+					    truth:m.truth,
+					    title:m.title,
+					    cls:"prob"}));
 
   });
+  
 
   hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
+  console.log(hline_height)
+  let ml = cfg.ui.plots.machine_learning[0];
+  const machine_learning = add_osc_prob(svg, {prob_i: 1,
+                                      ylabel: ml.ylabel,
+                                      xrange: ml.xrange,
+                                      yrange: ml.yrange,
+                                      x_start : 0,
+                                      y_start: hline_height,
+					    dobar: ml.dobar,
+					    dotrue:ml.dotrue,
+					    plot_dims: scaff.plots.osc_probability,
+					    truth:ml.truth,
+					    title:ml.title,
+					      cls: "ml_prob"});
+  
   hline_height += 2;
 
   const flvtriangles = [];
@@ -575,6 +601,7 @@ const build_ui = (cfg) => {
   return { traces: traces,
            text_elements: text_elements,
            osc_probability: osc_probability,
+	   machine_learning:machine_learning,
            flvtriangles: flvtriangles };
 }
 //Build UI ends here
@@ -618,13 +645,14 @@ websocket.onmessage = ({data}) => {
 
   if (obj.cmd == "ui_start"){
     console.log("Building UI");
-    console.log(obj);
+    //console.log(obj);
     ui_els = build_ui(obj.cfg.noec);
+    $(".ml_prob").hide();
    
     
      
   } else if(obj.cmd == "UPDATE"){
-    console.log(obj);
+    //console.log(obj);
     //console.log(obj.hist)
     //console.log(obj.osc_probs.numu)
     likelihood = obj.osc_probs.likelihood
@@ -639,7 +667,11 @@ websocket.onmessage = ({data}) => {
     ui_els.osc_probability[1].update(obj.osc_probs.nue,obj.osc_probs.nue_true,obj.hist);
     ui_els.osc_probability[2].update(obj.osc_probs.bnue,obj.osc_probs.bnue_true,obj.hist);
     if (obj.start_ml){
-      ui_els.osc_probability[3].update(obj.osc_probs.mlnue,obj.osc_probs.nue_true,obj.hist);
+      $(".ml_prob").show();
+      ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_probs.nue_true,obj.hist);
+    }
+    else{
+      $(".ml_prob").hide();
     }
     //console.log(ui_els)
     // if(once){
