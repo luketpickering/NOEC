@@ -206,10 +206,10 @@ const add_osc_prob= (parent_el, prob_data) => {
     return [pg,p];
   };
     
-  let nu_path = build_path(nu_line, "prob-series nu",data);
+  let nu_path = build_path(nu_line, prob_data.cls +"-series nu",data);
   let nu_path_true = null;
   if(nu_line_true){
-    nu_path_true = build_path(nu_line_true, "prob-series nutrue", true_data);
+    nu_path_true = build_path(nu_line_true, prob_data.cls + "-series nutrue", true_data);
   }
   console.log(prob_data.title)
   console.log(pd.h)

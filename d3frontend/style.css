@@ -36,13 +36,15 @@ svg {
   fill: None;
 }
 
-.prob-series.nu.truth {
+
+
+.ml_prob-series.nu {
   stroke-width: 2;
   stroke: #00FFFF;
   fill: None;
 }
 
-.prob-series.nub.truth {
+.ml_prob-series.nutrue {
   stroke-width: 2;
   stroke: #FF00FF;
   fill: None;
