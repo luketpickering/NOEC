@@ -54,7 +54,7 @@ def startEmulator( devicefd,clientfd,client_tty):
       noise = not noise
         
 
-    os.write(devicefd,str.encode('{{') +  obj_to_msg({"cmd": "UPDATE","hist":hist, "tick": tick, "states": states, "ADCs": vals, "noise":noise})+ str.encode('}}'))
+    os.write(devicefd,str.encode('{{') +  obj_to_msg({"cmd": "UPDATE","hist":hist, "tick": tick, "states": states, "ADCs": vals, "noise":noise, "start_ml":False, "slow_load":False})+ str.encode('}}'))
     os.write(devicefd, str.encode('\n'))
 
        # print(f"{tick} -- Update: vals = {vals}")
