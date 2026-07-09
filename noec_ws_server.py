@@ -159,19 +159,19 @@ class InputProcessor:
       particle = random.randint(0,2)
       bin = random.randint(0,self.true_bin_num-1)
       if particle == 0:
-        change = min(0.1,actual_osc_probs[bin][1][1])
+        change = min(random.uniform(0.05,0.2),actual_osc_probs[bin][1][1])
         print(change)
         actual_osc_probs[bin][1][1] -= change
         self.true_osc_probs[bin][1][1] += change
         print(self.true_osc_probs[bin][1][1])
       elif particle == 1:
-        change = min(0.01,actual_osc_probs[bin][1][0])
+        change = min(random.uniform(0.005,0.02),actual_osc_probs[bin][1][0])
         print(change)
         actual_osc_probs[bin][1][0] -= change
         self.true_osc_probs[bin][1][0] += change
         print(self.true_osc_probs[bin][1][0])
       else:
-        change = min(0.01,actual_bosc_probs[bin][1][0])
+        change = min(random.uniform(0.005,0.01),actual_bosc_probs[bin][1][0])
         print(change)
         actual_bosc_probs[bin][1][0] -= change
         self.true_bosc_probs[bin][1][0] += change
