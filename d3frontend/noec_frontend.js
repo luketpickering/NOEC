@@ -222,12 +222,19 @@ const add_osc_prob= (parent_el, prob_data) => {
     .text(prob_data.title);
   
   return {el:el, update: (d,d_t,step) => {
+    let step_correction = (d_t[1][0] - d_t[0][0])/2;
+    console.log(step_correction);
     data.length = 0;
     d.forEach((e)=>{data.push(e)});
     nu_path[1].attr("d", nu_line);
     if(nu_line_true){
       true_data.length = 0;
-      d_t.forEach((e)=>{true_data.push(e)});
+      if (step){
+	d_t.forEach((e)=>{true_data.push([e[0]-step_correction,e[1]])});
+      }
+      else{
+	d_t.forEach((e)=>{true_data.push(e)});
+      }
       nu_path_true[1].attr("d", nu_line_true);
       if (step){
 	nu_line_true.curve(d3.curveStepAfter);
