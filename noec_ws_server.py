@@ -28,6 +28,8 @@ class InputProcessor:
     self.param_idx = {}
     self.load_thread = None
     self.ml_thread = None
+    self.prev_noise = False
+    self.prev_hist = False
     
 
     for i, pdef in enumerate(self.cfg["noec"]["controls"]["parameters"]):
@@ -51,11 +53,23 @@ class InputProcessor:
       if i < len(self.param_maps):
        self. true_vals_mapped.append(self.param_maps[i](v))
     self.true_bin_num = 30
-    self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs_hist(self.true_vals_mapped,1300,  self.true_bin_num)
-    self.e_noise = np.array([random.uniform(-0.1,0.1)*i[1][0] for i in self.true_osc_probs])
-    self.e_bnoise = np.array([random.uniform(-0.1,0.1)*i[1][0] for i in self.true_bosc_probs])
-    self.mu_noise = np.array([random.uniform(-0.1,0.1)*i[1][1] for i in self.true_osc_probs])
+
+    self.true_Es, self.true_mu_probs, self.true_e_probs, self.true_e_bprobs = self.calc_probs(self.true_vals_mapped,1300)
+    self.true_Es_hist, self.true_mu_probs_hist, self.true_e_probs_hist, self.true_e_bprobs_hist = self.calc_probs_hist(self.true_vals_mapped,1300,  self.true_bin_num)
+
+    self.e_noise = np.array([random.uniform(0.9,1.1)*i for i in self.true_e_probs])
+    self.e_bnoise = np.array([random.uniform(0.9,1.1)*i for i in self.true_e_bprobs])
+    self.mu_noise = np.array([random.uniform(0.9,1.1)*i for i in self.true_mu_probs])
+
+    self.e_noise_hist = np.array([random.uniform(0.9,1.1)*i for i in self.true_e_probs_hist])
+    self.e_bnoise_hist = np.array([random.uniform(0.9,1.1)*i for i in self.true_e_bprobs_hist])
+    self.mu_noise_hist = np.array([random.uniform(0.9,1.1)*i for i in self.true_mu_probs_hist])
+    
+    self.true_Es_disp, self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.true_Es, self.true_mu_probs, self.true_e_probs, self.true_e_bprobs
+    
     self.ml_nue_probs = [0 for i in range(self.true_bin_num)]
+    self.ml_Es = [0 for i in range(self.true_bin_num)]
+    self.ml_lh = 0
     
   def calc_probs(self, vals, L):
 
@@ -77,8 +91,10 @@ class InputProcessor:
     bosc_probs = [ Probability_Matter_LBL(s12sq, s13sq, s23sq,
                                       delta, Dmsq21, Dmsq31,
                                       L, -E, rho, Ye, N_Newton) for E in Es ]
-
-    return Es, osc_probs, bosc_probs
+    mu_osc_probs = np.array([osc_probs[i][1][1] for i in range(len(osc_probs))])
+    e_osc_probs = np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])
+    e_bosc_probs = np.array([bosc_probs[i][1][0] for i in range(len(bosc_probs))])
+    return Es, mu_osc_probs,e_osc_probs,e_bosc_probs
   
   def calc_probs_hist(self, vals, L, num_bins, correct_for_disp=True):
     Es = np.linspace(0.5,6.4,num_bins) #GeV
@@ -100,9 +116,11 @@ class InputProcessor:
     bosc_probs = [ Probability_Matter_LBL(s12sq, s13sq, s23sq,
                                       delta, Dmsq21, Dmsq31,
                                       L, -E, rho, Ye, N_Newton) for E in Es ]
-    bin_width = Es[1]-Es[0]
-    #Es -= (bin_width/2)
-    return Es, osc_probs, bosc_probs
+
+    mu_osc_probs =np.array([osc_probs[i][1][1] for i in range(len(osc_probs))])
+    e_osc_probs = np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])
+    e_bosc_probs = np.array([bosc_probs[i][1][0] for i in range(len(bosc_probs))])
+    return Es, mu_osc_probs,e_osc_probs,e_bosc_probs
 
   def calc_state_probs(self, tick, vals, L_max):
 
@@ -142,44 +160,37 @@ class InputProcessor:
   def calc_lh_disp(self, predicted,actual):
     return round(100/np.exp(self.calculate_likelihood(predicted,actual)/2),0)
 
-  def slow_data(self):
-    actual_osc_probs = copy.deepcopy(self.true_osc_probs)
-    actual_bosc_probs = copy.deepcopy(self.true_bosc_probs)
-    for i in range(self.true_bin_num):
-       self.true_osc_probs[i][1][0] = 0.0000000001
-       self.true_osc_probs[i][1][1] = 0.0000000001
-       self.true_bosc_probs[i][1][0] = 0.0000000001
-    print(self.true_osc_probs)
+  def slow_data(self,hist, noise):
+    actual_mu_probs = copy.deepcopy(self.true_mu_probs_disp)
+    actual_e_probs = copy.deepcopy(self.true_e_probs_disp)
+    actual_e_bprobs = copy.deepcopy(self.true_e_bprobs_disp)
+    for i in range(len(self.true_mu_probs_disp)):
+       self.true_mu_probs_disp[i] = 0.0000000001
+       self.true_e_probs_disp[i] = 0.0000000001
+       self.true_e_bprobs_disp[i] = 0.0000000001
     iters_without_hit = 0
     while iters_without_hit <250:
       print(iters_without_hit)
       particle = random.randint(0,2)
-      bin = random.randint(0,self.true_bin_num-1)
+      bin = random.randint(0,len(self.true_mu_probs_disp)-1)
       if particle == 0:
-        change = min(random.uniform(0.05,0.2),actual_osc_probs[bin][1][1])
-        print(change)
-        actual_osc_probs[bin][1][1] -= change
-        self.true_osc_probs[bin][1][1] += change
-        print(self.true_osc_probs[bin][1][1])
+        change = min(random.uniform(0.05,0.2),actual_mu_probs[bin])
+        actual_mu_probs[bin] -= change
+        self.true_mu_probs_disp[bin] += change
       elif particle == 1:
-        change = min(random.uniform(0.005,0.02),actual_osc_probs[bin][1][0])
-        print(change)
-        actual_osc_probs[bin][1][0] -= change
-        self.true_osc_probs[bin][1][0] += change
-        print(self.true_osc_probs[bin][1][0])
+        change = min(random.uniform(0.005,0.02),actual_e_probs[bin])
+        actual_e_probs[bin] -= change
+        self.true_e_probs_disp[bin] += change
       else:
-        change = min(random.uniform(0.005,0.01),actual_bosc_probs[bin][1][0])
-        print(change)
-        actual_bosc_probs[bin][1][0] -= change
-        self.true_bosc_probs[bin][1][0] += change
-        print(self.true_bosc_probs[bin][1][0])
+        change = min(random.uniform(0.005,0.01),actual_e_bprobs[bin])
+        actual_e_bprobs[bin] -= change
+        self.true_e_bprobs_disp[bin] += change
       if change == 0:
         iters_without_hit +=1
       else:
         iters_without_hit = 0
       time.sleep(0.1)
-    self.true_Es, self.true_osc_probs, self.true_bosc_probs = self.calc_probs_hist(self.true_vals_mapped,1300,  self.true_bin_num)
-    
+    self.set_true_disp(hist,noise)
     
 
 
@@ -188,37 +199,47 @@ class InputProcessor:
     for i, v in enumerate([a,b,c,d]):
       if i < len(self.param_maps):
        mapped_vals.append(self.param_maps[i](v))
-    Es, osc_probs, bosc_probs = self.calc_probs_hist(mapped_vals,1300,  self.true_bin_num)
-    return np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])
+    if len(Es) == self.true_bin_num:
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,1300,  self.true_bin_num)
+    else:
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,1300)
+    return e_osc_probs
 
   def ml_probs_func_display(self,a,b,c,d):
     mapped_vals = []
     for i, v in enumerate([a,b,c,d]):
       if i < len(self.param_maps):
         mapped_vals.append(self.param_maps[i](v))
-    Es, osc_probs, bosc_probs = self.calc_probs_hist(mapped_vals,1300,30)
-    return np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])
+    Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(mapped_vals,1300)
+    return Es, e_osc_probs
 
   def ml_fit_to_true(self,time_iter=1, noise = False):
+    fitting_Es = copy.deepcopy(self.true_Es_disp)
+    fitting_e_probs = copy.deepcopy(self.true_e_probs_disp)
     intermediate_params = []
     p0 = [random.randint(0,1044) for i in range(4)]
-    params, cov = optimize.curve_fit(self.ml_probs_func, self.true_Es,np.array([self.true_osc_probs[i][1][0] for i in range(len(self.true_osc_probs))]), p0,method="trf", callback=(lambda x: intermediate_params.append(x)))
+    params, cov = optimize.curve_fit(self.ml_probs_func, fitting_Es,fitting_e_probs, p0,method="trf", callback=(lambda x: intermediate_params.append(x)))
     for i in intermediate_params:
-      print(i)
-      self.ml_nue_probs = self.ml_probs_func_display(*i)
+      self.ml_lh = self.calc_lh_disp(self.ml_probs_func(fitting_Es,*i), fitting_e_probs)
+      self.ml_Es, self.ml_nue_probs = self.ml_probs_func_display(*i)
       time.sleep(time_iter)
 
-  def hist_view(self):
-    pass
+  def is_setting_changed(self,noise,hist):
+    return self.previous_noise != noise or self.previous_hist!= hist
 
-  def add_noise(self):
-    pass
-
-  def remove_noise(self):
-    pass 
-
-  def curve_view(self):
-    pass
+  def set_true_disp(self, hist, noise):
+    if hist:
+      self.true_Es_disp = self.true_Es_hist
+      if noise:
+        self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.mu_noise_hist, self.e_noise_hist, self.e_bnoise_hist
+      else:
+        self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.true_mu_probs_hist, self.true_e_probs_hist, self.true_e_bprobs_hist
+    else:
+      self.true_Es_disp = self.true_Es
+      if noise:
+        self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.mu_noise, self.e_noise, self.e_bnoise
+      else:
+        self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.true_mu_probs, self.true_e_probs, self.true_e_bprobs
 
   def process(self, data):
     print(data)
@@ -231,21 +252,32 @@ class InputProcessor:
     #print(data["vals"])
     data["L_km"] = 1300
     data["start_ml"] = True
+    data["slow_load"] = False
+    load_hist = None
     
-    Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
-    Es_h, osc_probs_h, bosc_probs_h = self.calc_probs_hist(data["vals"], data["L_km"], self.true_bin_num)
+    Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     data["osc_probs"] = {}
-
     
+
+    if self.load_thread == None or not self.load_thread.is_alive():
+      self.set_true_disp(data['hist'], data['noise'])
+
+    if len(self.true_Es_disp) == self.true_bin_num:
+      print("hist")
+      Es_lh, mu_osc_probs_lh,e_osc_probs_lh,e_bosc_probs_lh = self.calc_probs_hist(data["vals"], data["L_km"], self.true_bin_num)
+    else:
+      Es_lh, mu_osc_probs_lh,e_osc_probs_lh,e_bosc_probs_lh = Es, mu_osc_probs,e_osc_probs,e_bosc_probs
   
     if data["slow_load"]:
       if self.load_thread == None:
+        load_hist = data["hist"]
         print("Thread started")
-        self.load_thread = threading.Thread(target = self.slow_data)
+        self.load_thread = threading.Thread(target = self.slow_data, args=(data['hist'], data['noise']))
         self.load_thread.start()
+      data["hist"] = load_hist
         
     if data["start_ml"]:       
-      if self.ml_thread == None:
+      if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"],data["hist"]):
         print("Thread started")
         self.ml_thread = threading.Thread(target = self.ml_fit_to_true)
         self.ml_thread.start()
@@ -254,31 +286,27 @@ class InputProcessor:
         data['ml_status'] = "Complete"
       else:
         data["ml_status"] = "In Progress"
-      data["osc_probs"]["mlnue"] = [ [Es[i], self.ml_nue_probs[i]] for i in range(len(self.ml_nue_probs))]
-      data["ml_likelihood"] = self.calc_lh_disp(np.array([data["osc_probs"]["mlnue"][i][1] for i in range(len(data["osc_probs"]["mlnue"]))]),np.array([self.true_osc_probs[i][1][0]for i in range(len(self.true_osc_probs))]))
+
+      data["osc_probs"]["mlnue"] = [ [self.ml_Es[i], self.ml_nue_probs[i]] for i in range(len(self.ml_nue_probs))]
+      data["ml_likelihood"] = self.ml_lh
       print(data["ml_likelihood"])
-      for i in range(30):
-        print(self.true_osc_probs[i][1][0], data["osc_probs"]["mlnue"][i][1],(self.true_osc_probs[i][1][0]- data["osc_probs"]["mlnue"][i][1])**2/self.true_osc_probs[i][1][0])
-      print(self.calculate_likelihood(np.array([data["osc_probs"]["mlnue"][i][1] for i in range(len(data["osc_probs"]["mlnue"]))]),np.array([self.true_osc_probs[i][1][0]for i in range(len(self.true_osc_probs))])))
+      #for i in range(30):
+        #print(self.true_osc_probs[i][1][0], data["osc_probs"]["mlnue"][i][1],(self.true_osc_probs[i][1][0]- data["osc_probs"]["mlnue"][i][1])**2/self.true_osc_probs[i][1][0])
+      #print(self.calculate_likelihood(np.array([data["osc_probs"]["mlnue"][i][1] for i in range(len(data["osc_probs"]["mlnue"]))]),np.array([self.true_osc_probs[i][1][0]for i in range(len(self.true_osc_probs))])))
 
-    data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1]] for i in range(len(osc_probs))]
-    data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0]] for i in range(len(osc_probs))]
-    data["osc_probs"]["bnue"] = [ [Es[i], bosc_probs[i][1][0]] for i in range(len(osc_probs))]
-
-    if data["noise"]:
-      data["osc_probs"]["numu_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][1]+self.mu_noise[i]] for i in range(len(self.true_osc_probs))]
-      data["osc_probs"]["nue_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][0]+self.e_noise[i]] for i in range(len(self.true_osc_probs))]
-      data["osc_probs"]["bnue_true"] = [ [self.true_Es[i], self.true_bosc_probs[i][1][0] + self.e_bnoise[i]] for i in range(len(self.true_osc_probs))]
-      data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array([osc_probs_h[i][1][0] for i in range(len(osc_probs_h))]),np.array([data["osc_probs"]["nue_true"][i][1] +self.e_noise[i] for i in range(len(self.true_osc_probs))]))
-    else:
-      data["osc_probs"]["numu_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][1]] for i in range(len(self.true_osc_probs))]
-      data["osc_probs"]["nue_true"] = [ [self.true_Es[i], self.true_osc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
-      data["osc_probs"]["bnue_true"] = [ [self.true_Es[i], self.true_bosc_probs[i][1][0]] for i in range(len(self.true_osc_probs))]
-      data["osc_probs"]["likelihood"] = self.calc_lh_disp(np.array([osc_probs_h[i][1][0] for i in range(len(osc_probs_h))]),np.array([data["osc_probs"]["nue_true"][i][1]for i in range(len(self.true_osc_probs))]))
+    data["osc_probs"]["numu"] = [ [Es[i], mu_osc_probs[i]] for i in range(len(Es))]
+    data["osc_probs"]["nue"] = [ [Es[i], e_osc_probs[i]] for i in range(len(Es))]
+    data["osc_probs"]["bnue"] = [ [Es[i], e_bosc_probs[i]] for i in range(len(Es))]
+    data["osc_probs"]["numu_true"] = [[self.true_Es_disp[i], self.true_mu_probs_disp[i]] for i in range(len(self.true_Es_disp))]
+    data["osc_probs"]["nue_true"] = [[self.true_Es_disp[i], self.true_e_probs_disp[i]] for i in range(len(self.true_Es_disp))]
+    data["osc_probs"]["bnue_true"] = [[self.true_Es_disp[i], self.true_e_bprobs_disp[i]] for i in range(len(self.true_Es_disp))]
+    data["osc_probs"]["likelihood"] = self.calc_lh_disp(e_osc_probs_lh, self.true_e_probs_disp)
     data["osc_probs"]["true_likelihood"] = data["osc_probs"]["likelihood"]
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
-  
-   # print(data["osc_probs"]["likelihood"])
+
+    self.previous_hist = data["hist"]
+    self.previous_noise = data["noise"]
+
     return data
 
 def float_range(start, stop, step):
