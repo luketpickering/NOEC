@@ -163,7 +163,7 @@ const add_osc_prob= (parent_el, prob_data) => {
       .range([pd.h, 0]);
 
   const xax = el.append("g")
-      .attr("class", "axis")
+      .attr("class", prob_data.axiscls + "axis")
       .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
       .call(d3.axisBottom(x).ticks(pd.nxticks))
 
@@ -174,7 +174,7 @@ const add_osc_prob= (parent_el, prob_data) => {
 
   // Add the y-axis.
   const yax = el.append("g")
-      .attr("class", "axis")
+      .attr("class", prob_data.axiscls + "axis")
       .attr("transform", `translate(${pd.ml},${pd.mt})`)
       .call(d3.axisLeft(y).ticks(pd.nyticks))
 
@@ -570,38 +570,46 @@ const build_ui = (cfg) => {
 					    plot_dims: scaff.plots.osc_probability,
 					    truth:m.truth,
 					    title:m.title,
-					    cls:"prob"}));
+					    cls:"prob",
+					    axiscls:""}));
 
   });
   
 
   hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
-  console.log(hline_height)
+  
+
+  
   let ml = cfg.ui.plots.machine_learning[0];
   const machine_learning = add_osc_prob(svg, {prob_i: 1,
                                       ylabel: ml.ylabel,
                                       xrange: ml.xrange,
                                       yrange: ml.yrange,
                                       x_start : 0,
-                                      y_start: hline_height,
+                                      y_start: hline_height +40,
 					    dobar: ml.dobar,
 					    dotrue:ml.dotrue,
 					    plot_dims: scaff.plots.osc_probability,
 					    truth:ml.truth,
 					    title:ml.title,
-					      cls: "ml_prob"});
+					      cls: "ml_prob",
+					      axiscls:"ml_"});
 
   const ml_text_elements = [];
   console.log(cfg.ui.ml_status)
   cfg.ui.ml_status.forEach((m, i) => {
-    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 450+ 200*i, y: hline_height + 10}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
+    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 450+ 200*i, y: hline_height + 40}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
   });
   console.log(ml_text_elements)
 
   
-  hline_height += 2;
+  hline_height += 26;
 
+  draw_line(scaff_el, {ends:[[500, hline_height], [page_w,hline_height]], lw:4},"ml_scaffolding");
+
+
+  draw_line(scaff_el, {ends:[[500, hline_height  +scaff.plots.osc_probability.h+100], [page_w,hline_height +scaff.plots.osc_probability.h+100]], lw:4},"ml_scaffolding");
   const flvtriangles = [];
   cfg.ui.plots.flvtriangles.forEach((m, i) => {
     flvtriangles.push(add_3flavor_triangle(svg, {flvtri_i: flvtriangles.length,

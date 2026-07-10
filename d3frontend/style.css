@@ -7,12 +7,24 @@ svg {
   overflow: visible;
 }
 
-.axis path, .tick line {
+.axis path,.axis .tick line {
   stroke: #00FF00;
   stroke-width: 2;
 }
 
-.trace text, .prob text, .ml_prob text, text.ml_prob {
+.ml_axis path, .ml_axis .tick line{
+  stroke: #FF0000;
+  stroke-width: 2;
+}
+
+ .ml_prob text, text.ml_prob {
+  font-family: 'Orbitron', sans-serif;
+  stroke: #FF0000;
+  fill: #FF0000;
+}
+
+
+.trace text, .prob text, {
   font-family: 'Orbitron', sans-serif;
   stroke: #00FF00;
   fill: #00FF00;
@@ -61,6 +73,10 @@ text.ticker {
 
 path.scaffolding {
   stroke: #00FF00;
+}
+
+path.ml_scaffolding{
+    stroke: #FF0000;
 }
 
 .flvtripoint.nue {
