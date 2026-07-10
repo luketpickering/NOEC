@@ -41,6 +41,9 @@ noec:
         - {  }
       likelihood:
         - { parameters: ["Dm32", "Th23"] }
+    ml_status:
+      - { name: "status", label: "status: "}
+      - { name: "likelihood", label: "likelihood [%]: "} 
   input:
     flux:
       numode:

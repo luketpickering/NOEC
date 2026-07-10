@@ -12,7 +12,7 @@ svg {
   stroke-width: 2;
 }
 
-.trace text, .prob text, .ml_prob text {
+.trace text, .prob text, .ml_prob text, text.ml_prob {
   font-family: 'Orbitron', sans-serif;
   stroke: #00FF00;
   fill: #00FF00;

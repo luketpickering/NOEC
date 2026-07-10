@@ -101,7 +101,7 @@ class InputProcessor:
                                       delta, Dmsq21, Dmsq31,
                                       L, -E, rho, Ye, N_Newton) for E in Es ]
     bin_width = Es[1]-Es[0]
-    Es -= (bin_width/2)
+    #Es -= (bin_width/2)
     return Es, osc_probs, bosc_probs
 
   def calc_state_probs(self, tick, vals, L_max):
@@ -137,13 +137,10 @@ class InputProcessor:
              "L": L }
 
   def calculate_likelihood(self, predicted,actual):
-    try:
-      return np.sum(np.power(predicted -actual ,2)/actual)
-    except:
-      return 0
+      return np.sum((predicted -actual)**2/actual)
 
   def calc_lh_disp(self, predicted,actual):
-    return round(100/np.exp(self.calculate_likelihood(predicted,actual)),0)
+    return round(100/np.exp(self.calculate_likelihood(predicted,actual)/2),0)
 
   def slow_data(self):
     actual_osc_probs = copy.deepcopy(self.true_osc_probs)
@@ -199,14 +196,13 @@ class InputProcessor:
     for i, v in enumerate([a,b,c,d]):
       if i < len(self.param_maps):
         mapped_vals.append(self.param_maps[i](v))
-    Es, osc_probs, bosc_probs = self.calc_probs(mapped_vals,1300)
+    Es, osc_probs, bosc_probs = self.calc_probs_hist(mapped_vals,1300,30)
     return np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])
 
   def ml_fit_to_true(self,time_iter=1, noise = False):
     intermediate_params = []
     p0 = [random.randint(0,1044) for i in range(4)]
     params, cov = optimize.curve_fit(self.ml_probs_func, self.true_Es,np.array([self.true_osc_probs[i][1][0] for i in range(len(self.true_osc_probs))]), p0,method="trf", callback=(lambda x: intermediate_params.append(x)))
-    #intermediate_params = [[random.randint(0,1044) for i in range(len(p0))] for j in range(random.randint(10,30))]
     for i in intermediate_params:
       print(i)
       self.ml_nue_probs = self.ml_probs_func_display(*i)
@@ -234,6 +230,7 @@ class InputProcessor:
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = 1300
+    data["start_ml"] = True
     
     Es, osc_probs, bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     Es_h, osc_probs_h, bosc_probs_h = self.calc_probs_hist(data["vals"], data["L_km"], self.true_bin_num)
@@ -252,7 +249,17 @@ class InputProcessor:
         print("Thread started")
         self.ml_thread = threading.Thread(target = self.ml_fit_to_true)
         self.ml_thread.start()
+        data["ml_status"] = "In Progress"
+      elif not self.ml_thread.is_alive():
+        data['ml_status'] = "Complete"
+      else:
+        data["ml_status"] = "In Progress"
       data["osc_probs"]["mlnue"] = [ [Es[i], self.ml_nue_probs[i]] for i in range(len(self.ml_nue_probs))]
+      data["ml_likelihood"] = self.calc_lh_disp(np.array([data["osc_probs"]["mlnue"][i][1] for i in range(len(data["osc_probs"]["mlnue"]))]),np.array([self.true_osc_probs[i][1][0]for i in range(len(self.true_osc_probs))]))
+      print(data["ml_likelihood"])
+      for i in range(30):
+        print(self.true_osc_probs[i][1][0], data["osc_probs"]["mlnue"][i][1],(self.true_osc_probs[i][1][0]- data["osc_probs"]["mlnue"][i][1])**2/self.true_osc_probs[i][1][0])
+      print(self.calculate_likelihood(np.array([data["osc_probs"]["mlnue"][i][1] for i in range(len(data["osc_probs"]["mlnue"]))]),np.array([self.true_osc_probs[i][1][0]for i in range(len(self.true_osc_probs))])))
 
     data["osc_probs"]["numu"] = [ [Es[i], osc_probs[i][1][1]] for i in range(len(osc_probs))]
     data["osc_probs"]["nue"] = [ [Es[i], osc_probs[i][1][0]] for i in range(len(osc_probs))]

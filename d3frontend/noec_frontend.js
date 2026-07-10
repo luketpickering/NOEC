@@ -542,7 +542,8 @@ const build_ui = (cfg) => {
   cfg.controls.status.forEach((m, i) => {
     text_elements.push(draw_updatable_text(top_right_text, {x: 10+ 200*i, y: 10}, (v) => { return (m.label + ` ${v}`); }, "ticker"));
   });
-  
+
+    
   //text_elements.push(draw_updatable_text(top_right_text, {x: 10, y: 10}, (v) => { return `uptime [ticks]: ${v}`; }, "ticker"));
   //text_elements.push(draw_updatable_text(top_right_text, {x: 225, y: 10}, (v) => { return `baseline [km]: ${v}`; }, "ticker"));
   //text_elements.push(draw_updatable_text(top_right_text, {x:500, y: 10}, (v) => { return `likelihood: ${v}`; }, "ticker"));
@@ -583,6 +584,14 @@ const build_ui = (cfg) => {
 					    truth:ml.truth,
 					    title:ml.title,
 					      cls: "ml_prob"});
+
+  const ml_text_elements = [];
+  console.log(cfg.ui.ml_status)
+  cfg.ui.ml_status.forEach((m, i) => {
+    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 450+ 200*i, y: hline_height + 10}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
+  });
+  console.log(ml_text_elements)
+
   
   hline_height += 2;
 
@@ -602,7 +611,8 @@ const build_ui = (cfg) => {
            text_elements: text_elements,
            osc_probability: osc_probability,
 	   machine_learning:machine_learning,
-           flvtriangles: flvtriangles };
+           flvtriangles: flvtriangles,
+	   ml_text_elements:ml_text_elements};
 }
 //Build UI ends here
 
@@ -669,6 +679,9 @@ websocket.onmessage = ({data}) => {
     if (obj.start_ml){
       $(".ml_prob").show();
       ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_probs.nue_true,obj.hist);
+      console.log(ui_els.ml_text_elements[0])
+      ui_els.ml_text_elements[0].update(obj.ml_status);
+      ui_els.ml_text_elements[1].update(obj.ml_likelihood);
     }
     else{
       $(".ml_prob").hide();
