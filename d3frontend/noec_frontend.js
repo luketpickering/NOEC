@@ -146,6 +146,8 @@ const add_osc_prob= (parent_el, prob_data) => {
   const i = prob_data.prob_i;
   const lpos = prob_data.x_start + i*(pd.w + pd.ml + pd.mb);
   const tpos = prob_data.y_start;
+  const inter_between = prob_data.interpolate_between
+  console.log(inter_between)
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
@@ -214,7 +216,6 @@ const add_osc_prob= (parent_el, prob_data) => {
   console.log(prob_data.title)
   console.log(pd.h)
   console.log(tpos)
-  //aw_text(el, {x:pd.w*0.5, y: 20, text:prob_data.title});
   el.append("text")
     .attr("x", (pd.w/2))                    
     .attr("y", 20)
@@ -223,10 +224,18 @@ const add_osc_prob= (parent_el, prob_data) => {
   
   return {el:el, update: (d,d_t,step) => {
     let step_correction = (d_t[1][0] - d_t[0][0])/2;
-    console.log(step_correction);
-    data.length = 0;
-    d.forEach((e)=>{data.push(e)});
-    nu_path[1].attr("d", nu_line);
+    if (inter_between){
+      data.length=0
+      d.forEach((e)=>{data.push(e)});
+      nu_path[1].transition()
+    .duration(300).attr("d", nu_line)
+      }
+    else{
+      data.length = 0;
+      d.forEach((e)=>{data.push(e)});
+      nu_path[1].attr("d", nu_line)
+    }
+      
     if(nu_line_true){
       true_data.length = 0;
       if (step){
@@ -243,10 +252,8 @@ const add_osc_prob= (parent_el, prob_data) => {
 	nu_line_true.curve(d3.curveNatural);
       }
     }
-  }};
-}
-
-
+  }}
+};
 
 const add_3flavor_triangle = (parent_el, flvtri_data) => {
 
@@ -571,7 +578,8 @@ const build_ui = (cfg) => {
 					    truth:m.truth,
 					    title:m.title,
 					    cls:"prob",
-					    axiscls:""}));
+					    axiscls:"",
+					    interpolate_between:false}));
 
   });
   
@@ -594,7 +602,8 @@ const build_ui = (cfg) => {
 					    truth:ml.truth,
 					    title:ml.title,
 					      cls: "ml_prob",
-					      axiscls:"ml_"});
+					      axiscls:"ml_",
+					      interpolate_between:true});
 
   const ml_text_elements = [];
   console.log(cfg.ui.ml_status)
