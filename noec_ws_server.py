@@ -47,7 +47,7 @@ class InputProcessor:
 
       self.param_maps.append(mapper(min, max, adcmx))
 
-    true_vals = [random.randint(0,adcmx) for i in range(4)]
+    true_vals = [random.randint(0,int(adcmx)) for i in range(4)]
     self.true_vals_mapped = []
     for i, v in enumerate(true_vals):
       if i < len(self.param_maps):
