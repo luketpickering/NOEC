@@ -640,6 +640,8 @@ const build_ui = (cfg) => {
 }
 //Build UI ends here
 
+
+
 const websocket = new WebSocket("ws://localhost:5678/");
 
 let ui_els = null;
@@ -650,26 +652,57 @@ let likelihood = 0
 let true_likelihood = 0
 let noise = false
 let hist = false
+let dialog
+let score = 0
+
+function addScore(){
+  if (name != ""){
+    $.post("/add_score",{username:name,score:Math.round(score)});
+  }
+  dialog.dialog("close")
+}
+  
+dialog = $( "#dialog" ).dialog({ autoOpen: false,
+			modal: true,
+			buttons: {
+			  "Create an account": addScore,
+			  Cancel: function() {
+			    dialog.dialog( "close" );
+			  }
+			},
+			close: function() {
+			  form[ 0 ].reset();
+			  allFields.removeClass( "ui-state-error" );
+			}
+		      });
+ 
+let form = dialog.find( "form" ).on( "submit", function( event ) {
+   event.preventDefault();
+      addScore();
+ });
+
 $(document).on("keypress", function( event ){
-  let score
+  let name = $('input[name=username]').val()
+  let currentTime = Date.now();
+  if ((currentTime - startTime) > 300000){
+    score = 1;
+  }
+  else{
+    score = 300- ((currentTime - startTime)/1000);
+    console.log(score)
+    console.log("Time multiplier: " + 300- ((currentTime - startTime)/1000));
+  }
+  score *= true_likelihood;
+  console.log("Likelihood  multiplier: " + true_likelihood);
+  if (noise){
+    score *=1.5;
+  }
+  if (hist){
+    score *=1.5;
+  }
+  //$('#score-info').text = "Your score is: " + score;
   if (event.code == "Enter"){
-    let currentTime = Date.now();
-    if ((currentTime - startTime) > 300000){
-      score = 1
-    }
-    else{
-      score = 300- ((currentTime - startTime)/1000)
-      console.log("Time multiplier: " + 300- ((currentTime - startTime)/1000))
-    }
-    score *= true_likelihood
-    console.log("Likelihood  multiplier: " + true_likelihood)
-    if (noise){
-      score *=1.5
-    }
-    if (hist){
-      score *=1.5
-    }
-    alert("Score is: "+  Math.round(score));
+    dialog.dialog("open")
   }
 });
 

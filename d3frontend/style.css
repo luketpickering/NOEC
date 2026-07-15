@@ -126,3 +126,58 @@ path.nue {
   text-anchor: middle;
   fill: #00FF00;
 }
+
+table{
+  font-family: 'Orbitron', sans-serif;
+  text-anchor: middle;
+  margin-left: auto;
+  margin-right: auto;
+  color:#00FF00
+}
+
+.lb{
+  font-family: 'Orbitron', sans-serif;
+  text-anchor: middle;
+  margin-left: auto;
+  margin-right: auto;
+  color:#00FF00;
+  text-align: center;
+ }
+ 
+td, th{
+  margin:40px;
+  padding-right:40px;
+  text-align:left;
+}
+
+.ui-dialog{
+    font-family: 'Orbitron', sans-serif;
+    text-anchor: middle;
+    background-color:black;
+    color:#00FF00;
+    padding:20px;
+    border:4px solid #00FF00;
+    
+}
+
+.ui-dialog input{
+    font-family: 'Orbitron', sans-serif;
+    text-anchor: middle;
+    background-color:black;
+    color:#00FF00;
+    border:2px solid #00FF00;
+    margin:4px;
+}
+
+.ui-button{
+    font-family: 'Orbitron', sans-serif;
+    text-anchor: middle;
+    background-color:black;
+    color:#00FF00;
+    margin:4px;
+    border:4px solid #00FF00;
+}
+
+#dialog button{
+    background-color:black;
+}

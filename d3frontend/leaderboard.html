@@ -2,23 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>NOEC</title>
+    <title>LEADERBOARD</title>
     <link href='https://fonts.googleapis.com/css?family=Orbitron' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="style.css">
     <script src="d3.v7.min.js"></script>
     <script src="jquery-4.0.0.min.js"></script>
-    <script src ="jquery-ui.js"></script>
-    <script type="module" src="noec_frontend.js"></script>
+    <!--<script type="module" src="noec_frontend.js"></script> -->
+    
   </head>
   <body>
-    <div id="dialog">
-      <form>
-	<p id="score-info"></p>
-	<p>To add your score to the leaderboard, provide a name:</p>
-	<label for="username">Name</label>
-	<input type="text", name="username">
-      </form>
-    </div>
+    <h1 class="lb">Leaderboard</h1>
+    <table>
+      <tr>
+	<th>Name</th>
+	<th>Score</th>
+      </tr>
+      {% for score in scores %}
+    <tr>
+    <td> {{score.username}} </td>
+    <td> {{score.score}} </td>
+    </tr>
+    {% endfor %}
+    </table>
     <div id="container"></div>
   </body>
 </html>
