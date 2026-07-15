@@ -7,6 +7,10 @@ svg {
   overflow: visible;
 }
 
+.trace text{
+    color:#00FF00;
+}
+
 .axis path,.axis .tick line {
   stroke: #00FF00;
   stroke-width: 2;
@@ -24,7 +28,7 @@ svg {
 }
 
 
-.trace text, .prob text, {
+.trace text, .prob text, text.prob{
   font-family: 'Orbitron', sans-serif;
   stroke: #00FF00;
   fill: #00FF00;
