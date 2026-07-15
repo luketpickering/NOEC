@@ -67,8 +67,8 @@ class InputProcessor:
     
     self.true_Es_disp, self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.true_Es, self.true_mu_probs, self.true_e_probs, self.true_e_bprobs
     
-    self.ml_nue_probs = [0 for i in range(self.true_bin_num)]
-    self.ml_Es = [0 for i in range(self.true_bin_num)]
+    self.ml_nue_probs = [0 for i in range(100)]
+    self.ml_Es = np.logspace(-0.3,0.8,100)
     self.ml_lh = 0
     
   def calc_probs(self, vals, L):
@@ -194,7 +194,7 @@ class InputProcessor:
     
 
 
-  def ml_probs_func(self,Es, a, b,c,d):
+  def ml_probs_func_sp(self,Es, a, b,c,d):
     mapped_vals = []
     for i, v in enumerate([a,b,c,d]):
       if i < len(self.param_maps):
@@ -205,15 +205,15 @@ class InputProcessor:
       Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,1300)
     return e_osc_probs
 
-  def ml_probs_func_display(self,a,b,c,d):
+  def ml_probs_func_display(self,a):
     mapped_vals = []
-    for i, v in enumerate([a,b,c,d]):
+    for i, v in enumerate(a):
       if i < len(self.param_maps):
         mapped_vals.append(self.param_maps[i](v))
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(mapped_vals,1300)
     return Es, e_osc_probs
 
-  def ml_fit_to_true(self,time_iter=1, noise = False):
+  def ml_fit_to_true_sp(self,time_iter=1, noise = False):
     fitting_Es = copy.deepcopy(self.true_Es_disp)
     fitting_e_probs = copy.deepcopy(self.true_e_probs_disp)
     intermediate_params = []
@@ -223,6 +223,68 @@ class InputProcessor:
       self.ml_lh = self.calc_lh_disp(self.ml_probs_func(fitting_Es,*i), fitting_e_probs)
       self.ml_Es, self.ml_nue_probs = self.ml_probs_func_display(*i)
       time.sleep(time_iter)
+
+  def ml_fit_to_true(self, time_iter=0.1, noise=False):
+    time.sleep(2)
+    fitting_Es = copy.deepcopy(self.true_Es_disp)
+    currentVals = [random.randint(0,1044) for i in range(4)]
+    learning_step = 10000
+    steps = 0
+    print("likelihood",self.ml_lh)
+    while self.ml_lh <100 or (steps <500 and self.ml_lh<95):
+      time.sleep(time_iter)
+      if steps >600 :
+        currentVals = [random.randint(0,1044) for i in range(4)]
+        steps = 0
+      cost_grad = self.get_gradient(self.cost,currentVals)
+      for i in range(len(currentVals)):
+        currentVals[i] -= learning_step*cost_grad[i]
+        if currentVals[i] > 1043:
+          currentVals[i] = 1043
+        elif currentVals[i] < 1:
+          currentVals[i] = 1
+      steps += 1
+      self.ml_Es, self.ml_nue_probs = self.ml_probs_func_display(currentVals)
+      self.ml_lh = self.ml_lh_disp(currentVals)
+      
+      
+      
+
+  def cost(self,a):
+    mapped_vals = []
+    for i,v in enumerate(a):
+      if i < len(self.param_maps):
+        mapped_vals.append(self.param_maps[i](v))
+    if len(self.true_Es_disp) == self.true_bin_num:
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,1300,  self.true_bin_num)
+    else:
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,1300)
+    return (self.calculate_likelihood(e_osc_probs,self.true_e_probs_disp) + self.calculate_likelihood(e_bosc_probs,self.true_e_bprobs_disp))/2
+
+
+  def ml_lh_disp(self,a):
+    mapped_vals = []
+    for i,v in enumerate(a):
+      if i < len(self.param_maps):
+        mapped_vals.append(self.param_maps[i](v))
+    if len(self.true_Es_disp) == self.true_bin_num:
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,1300,  self.true_bin_num)
+    else:
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,1300)
+    return self.calc_lh_disp(e_osc_probs,self.true_e_probs_disp)
+
+  def get_gradient(self,cost_func, vals, h=1e-7):
+    gradients = []
+    print(vals)
+    for i in range(len(vals)):
+        lowerGrad = vals.copy()
+        lowerGrad[i] -= h
+        upperGrad = vals.copy()
+        upperGrad[i] += h
+        gradients.append((cost_func(upperGrad)-cost_func(lowerGrad))/(2*h))
+    return np.array(gradients)
+      
+      
 
   def is_setting_changed(self,noise,hist):
     return self.previous_noise != noise or self.previous_hist!= hist
@@ -253,6 +315,8 @@ class InputProcessor:
     data["L_km"] = 1300
     data["start_ml"] = True
     data["slow_load"] = False
+    data["hist"] = True
+    data["noise"] = False
     load_hist = None
     
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(data["vals"], data["L_km"])
@@ -301,7 +365,7 @@ class InputProcessor:
     data["osc_probs"]["nue_true"] = [[self.true_Es_disp[i], self.true_e_probs_disp[i]] for i in range(len(self.true_Es_disp))]
     data["osc_probs"]["bnue_true"] = [[self.true_Es_disp[i], self.true_e_bprobs_disp[i]] for i in range(len(self.true_Es_disp))]
     data["osc_probs"]["likelihood"] = self.calc_lh_disp(e_osc_probs_lh, self.true_e_probs_disp)
-    data["osc_probs"]["true_likelihood"] = data["osc_probs"]["likelihood"]
+    data["osc_probs"]["score_likelihood"] = self.calc_lh_disp(e_osc_probs, self.true_e_probs)
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
 
     self.previous_hist = data["hist"]
