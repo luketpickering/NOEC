@@ -147,7 +147,7 @@ const add_osc_prob= (parent_el, prob_data) => {
   const lpos = prob_data.x_start + i*(pd.w + pd.ml + pd.mb);
   const tpos = prob_data.y_start;
   const inter_between = prob_data.interpolate_between
-  console.log(inter_between)
+ // console.log(inter_between)
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
@@ -656,8 +656,11 @@ let dialog
 let score = 0
 
 function addScore(){
+  let name = $('input[name=username]').val()
+  console.log(name)
+  console.log(score)
   if (name != ""){
-    $.post("/add_score",{username:name,score:Math.round(score)});
+    $.post("/add_score",{username:name,score:score});
   }
   dialog.dialog("close")
 }
@@ -672,7 +675,6 @@ dialog = $( "#dialog" ).dialog({ autoOpen: false,
 			},
 			close: function() {
 			  form[ 0 ].reset();
-			  allFields.removeClass( "ui-state-error" );
 			}
 		      });
  
@@ -682,7 +684,10 @@ let form = dialog.find( "form" ).on( "submit", function( event ) {
  });
 
 $(document).on("keypress", function( event ){
-  let name = $('input[name=username]').val()
+  
+  let currentTime = Date.now();
+  if (event.code == "Enter"){
+    let name = $('input[name=username]').val()
   let currentTime = Date.now();
   if ((currentTime - startTime) > 300000){
     score = 1;
@@ -697,12 +702,12 @@ $(document).on("keypress", function( event ){
   if (noise){
     score *=1.5;
   }
+  score = Math.round(score)
   if (hist){
     score *=1.5;
   }
-  //$('#score-info').text = "Your score is: " + score;
-  if (event.code == "Enter"){
-    dialog.dialog("open")
+  $('#score-info').text("Your score is: " + score);
+    dialog.dialog("open");
   }
 });
 
