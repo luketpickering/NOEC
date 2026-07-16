@@ -73,7 +73,7 @@ const add_param_trace = (parent_el, trace_data) => {
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
-                      .attr("class", "trace")
+                      .attr("class",trace_data.cls +  "trace")
                       .attr("id", `trace-${i}`);
 
   el.append("text").attr("transform", `translate(${(pd.w + pd.ml)/2.0}, ${pd.mt*0.5})`)
@@ -92,7 +92,7 @@ const add_param_trace = (parent_el, trace_data) => {
 
   // Add the y-axis.
   const yax = el.append("g")
-      .attr("class", "axis")
+      .attr("class",trace_data.cls +  "axis")
       .attr("transform", `translate(${pd.ml},${pd.mt})`)
       .call(d3.axisLeft(y).ticks(pd.nyticks))
       .call(g => g.select(".domain").remove())
@@ -116,7 +116,7 @@ const add_param_trace = (parent_el, trace_data) => {
     const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
     const p = pg.append("path")
         .datum(data)
-        .attr("class", "trace-series")
+        .attr("class",trace_data.cls +  "trace-series")
         .attr("d", line);
     return [pg,p];
   };
@@ -541,9 +541,21 @@ const build_ui = (cfg) => {
                                         yrange: cfg.controls.parameters[param_i].range,
                                         x_start : 0,
                                         y_start: hline_height,
-                                        plot_dims: scaff.plots.trace}));
+                                        plot_dims: scaff.plots.trace,
+				        cls: ""}));
     }
   });
+
+  let lh_trace = add_param_trace(svg, {trace_i: traces.length,
+                                        param_i: 0,
+                                        label: cfg.controls.likelihood[0].label,
+                                        units: cfg.controls.likelihood[0].units,
+                                        yrange: cfg.controls.likelihood[0].range,
+                                        x_start : 0,
+                                       y_start: hline_height,
+                                       plot_dims: scaff.plots.trace,
+				       cls: ""});
+
 
   hline_height += 2 + scaff.plots.trace.mt + scaff.plots.trace.h + scaff.plots.trace.mb;
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
@@ -582,6 +594,8 @@ const build_ui = (cfg) => {
 					    interpolate_between:false}));
 
   });
+
+  
   
 
   hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
@@ -604,6 +618,16 @@ const build_ui = (cfg) => {
 					      cls: "ml_prob",
 					      axiscls:"ml_",
 					      interpolate_between:true});
+  
+  let ml_lh_trace = add_param_trace(svg, {trace_i: traces.length,
+                                        param_i: 0,
+                                        label: cfg.controls.likelihood[1].label,
+                                        units: cfg.controls.likelihood[1].units,
+                                        yrange: cfg.controls.likelihood[1].range,
+                                        x_start : -120,
+                                        y_start: hline_height +60,
+                                        plot_dims: scaff.plots.trace,
+					cls: "ml_"});
 
   const ml_text_elements = [];
   console.log(cfg.ui.ml_status)
@@ -636,7 +660,10 @@ const build_ui = (cfg) => {
            osc_probability: osc_probability,
 	   machine_learning:machine_learning,
            flvtriangles: flvtriangles,
-	   ml_text_elements:ml_text_elements};
+	   ml_text_elements:ml_text_elements,
+	   ml_lh_trace:ml_lh_trace,
+	   lh_trace:lh_trace,
+	 };
 }
 //Build UI ends here
 
@@ -649,9 +676,11 @@ let trace_param = [];
 let startTime = Date.now();
 let once = true;
 let likelihood = 0
-let true_likelihood = 0
+let score_likelihood = 0
 let noise = false
 let hist = false
+let slow_load = false
+let ml = false
 let dialog
 let score = 0
 
@@ -659,8 +688,9 @@ function addScore(){
   let name = $('input[name=username]').val()
   console.log(name)
   console.log(score)
+  console.log(hist)
   if (name != ""){
-    $.post("/add_score",{username:name,score:score});
+    $.post("/add_score",{username:name,score:score, hist:hist, noise:noise, ml:ml, slow_load:slow_load});
   }
   dialog.dialog("close")
 }
@@ -697,8 +727,8 @@ $(document).on("keypress", function( event ){
     console.log(score)
     console.log("Time multiplier: " + 300- ((currentTime - startTime)/1000));
   }
-  score *= true_likelihood;
-  console.log("Likelihood  multiplier: " + true_likelihood);
+  score *= score_likelihood;
+  console.log("Likelihood  multiplier: " + score_likelihood);
   if (noise){
     score *=1.5;
   }
@@ -724,14 +754,19 @@ websocket.onmessage = ({data}) => {
     
      
   } else if(obj.cmd == "UPDATE"){
-    //console.log(obj);
+    console.log(obj);
     //console.log(obj.hist)
     //console.log(obj.osc_probs.numu)
     likelihood = obj.osc_probs.likelihood
-    true_likelihood = obj.osc_probs.true_likelihood
+    score_likelihood = obj.osc_probs.score_likelihood
+    console.log(score_likelihood)
+    console.log(obj.hist)
     noise = obj.noise
     hist = obj.hist
+    ml = obj.start_ml
+    slow_load = obj.slow_load
     ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
+    ui_els.lh_trace.update(obj.osc_probs.likelihood);
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
     ui_els.text_elements[2].update(obj.osc_probs.likelihood)
@@ -744,9 +779,11 @@ websocket.onmessage = ({data}) => {
       console.log(ui_els.ml_text_elements[0])
       ui_els.ml_text_elements[0].update(obj.ml_status);
       ui_els.ml_text_elements[1].update(obj.ml_likelihood);
+      ui_els.ml_lh_trace.update(obj.ml_likelihood);
     }
     else{
       $(".ml_prob").hide();
+      $(".ml_trace").hide();
     }
     //console.log(ui_els)
     // if(once){

@@ -22,6 +22,10 @@ class Score(db.Model):
    id: Mapped[int] = mapped_column(primary_key=True)
    username: Mapped[str]
    score: Mapped[int]
+   hist: Mapped[bool]
+   noise: Mapped[bool]
+   ml: Mapped[bool]
+   slow_load: Mapped [bool]
 
 
 
@@ -39,13 +43,15 @@ def home():
 
 @app.route('/leaderboard')
 def leaderboard():
+   print(Score.__table__.columns)
+
    return render_template('leaderboard.html', scores =db.session.execute(db.select(Score).order_by(-Score.score)).scalars())
 
 @app.route('/add_score',methods=['GET','POST'])
 def add_score():
    if request.method == "POST":
-      print(request.form)
-      score = Score(username=request.form['username'], score=request.form['score'])
+      print("request", request.form)
+      score = Score(username=request.form['username'], score=request.form['score'], hist=(request.form['hist']== 'true'),noise= (request.form['noise']== 'true'), ml=(request.form['ml']== 'true'), slow_load=(request.form['slow_load']== 'true'))
       db.session.add(score)
       db.session.commit()
    for row in db.session.execute(db.select(Score.username)):

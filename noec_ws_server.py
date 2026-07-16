@@ -314,7 +314,7 @@ class InputProcessor:
     #print(data["vals"])
     data["L_km"] = 1300
     data["start_ml"] = True
-    data["slow_load"] = False
+    data["slow_load"] = True
     data["hist"] = True
     data["noise"] = False
     load_hist = None
@@ -334,11 +334,12 @@ class InputProcessor:
   
     if data["slow_load"]:
       if self.load_thread == None:
-        load_hist = data["hist"]
+        print("load_hist", load_hist)
+        self.prev_hist = data["hist"]
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['hist'], data['noise']))
         self.load_thread.start()
-      data["hist"] = load_hist
+      data["hist"] = self.prev_hist
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"],data["hist"]):
