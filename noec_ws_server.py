@@ -14,6 +14,7 @@ from nufast import Probability_Matter_LBL
 
 from math import pow, sin, pi
 from scipy import optimize
+from scipy.stats import norm
 
 import numpy as np
 import random
@@ -71,9 +72,10 @@ class InputProcessor:
     self.ml_Es = np.logspace(-0.3,0.8,100)
     self.ml_lh = 0
     
-  def calc_probs(self, vals, L):
-
+  def calc_probs(self, vals, L, exp_loc = 2, exp_scale=1):
+    
     Es = np.logspace(-0.3,0.8,100) #GeV
+    exposure = norm.pdf(Es, exp_loc, exp_scale)
     rho = 3 # g/cc
     Ye = 0.5
     N_Newton = 0
@@ -91,13 +93,14 @@ class InputProcessor:
     bosc_probs = [ Probability_Matter_LBL(s12sq, s13sq, s23sq,
                                       delta, Dmsq21, Dmsq31,
                                       L, -E, rho, Ye, N_Newton) for E in Es ]
-    mu_osc_probs = np.array([osc_probs[i][1][1] for i in range(len(osc_probs))])
-    e_osc_probs = np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])
-    e_bosc_probs = np.array([bosc_probs[i][1][0] for i in range(len(bosc_probs))])
+    mu_osc_probs = np.array([osc_probs[i][1][1] for i in range(len(osc_probs))])*exposure
+    e_osc_probs = np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])*exposure
+    e_bosc_probs = np.array([bosc_probs[i][1][0] for i in range(len(bosc_probs))])*exposure
     return Es, mu_osc_probs,e_osc_probs,e_bosc_probs
   
-  def calc_probs_hist(self, vals, L, num_bins, correct_for_disp=True):
+  def calc_probs_hist(self, vals, L, num_bins, exp_loc = 2, exp_scale=1):
     Es = np.linspace(0.5,6.4,num_bins) #GeV
+    exposure = norm.pdf(Es, exp_loc, exp_scale)
     #print("Es:", Es) 
     rho = 3 # g/cc
     Ye = 0.5
@@ -117,9 +120,9 @@ class InputProcessor:
                                       delta, Dmsq21, Dmsq31,
                                       L, -E, rho, Ye, N_Newton) for E in Es ]
 
-    mu_osc_probs =np.array([osc_probs[i][1][1] for i in range(len(osc_probs))])
-    e_osc_probs = np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])
-    e_bosc_probs = np.array([bosc_probs[i][1][0] for i in range(len(bosc_probs))])
+    mu_osc_probs =np.array([osc_probs[i][1][1] for i in range(len(osc_probs))])*exposure
+    e_osc_probs = np.array([osc_probs[i][1][0] for i in range(len(osc_probs))])*exposure
+    e_bosc_probs = np.array([bosc_probs[i][1][0] for i in range(len(bosc_probs))])*exposure
     return Es, mu_osc_probs,e_osc_probs,e_bosc_probs
 
   def calc_state_probs(self, tick, vals, L_max):
