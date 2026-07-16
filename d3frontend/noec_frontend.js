@@ -698,7 +698,7 @@ function addScore(){
 dialog = $( "#dialog" ).dialog({ autoOpen: false,
 			modal: true,
 			buttons: {
-			  "Create an account": addScore,
+			  "Add Score": addScore,
 			  Cancel: function() {
 			    dialog.dialog( "close" );
 			  }
@@ -732,10 +732,11 @@ $(document).on("keypress", function( event ){
   if (noise){
     score *=1.5;
   }
-  score = Math.round(score)
+  
   if (hist){
     score *=1.5;
   }
+  score = Math.round(score)
   $('#score-info').text("Your score is: " + score);
     dialog.dialog("open");
   }
