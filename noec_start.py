@@ -33,8 +33,9 @@ def main( serial_device=None):
   if use_emul:
     print("emulator started")
     thread_emul = threading.Thread(target=noec_device_emulator.startEmulator, args=(devicefd,clientfd,serial_device))
-    thread_server.start()
+    
     thread_emul.start()
+  thread_server.start()
   asyncio.run(noec_ws_server.NOECWSServer((str(serial_device))))
   
   

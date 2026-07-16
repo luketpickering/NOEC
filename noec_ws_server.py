@@ -313,11 +313,7 @@ class InputProcessor:
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = 1300
-    data["start_ml"] = True
-    data["slow_load"] = True
-    data["hist"] = True
-    data["noise"] = False
-    load_hist = None
+
     
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(data["vals"], data["L_km"])
     data["osc_probs"] = {}
@@ -334,7 +330,6 @@ class InputProcessor:
   
     if data["slow_load"]:
       if self.load_thread == None:
-        print("load_hist", load_hist)
         self.prev_hist = data["hist"]
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['hist'], data['noise']))
