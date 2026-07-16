@@ -20,6 +20,19 @@ const draw_rect = (parent_el, rect_data, cls=null) => {
   return el;
 }
 
+const draw_updateable_circle = (parent_el, circ_data, cls=null) => {
+  const el = parent_el.append("circle");
+  el.attr('cx', circ_data.x);
+  el.attr('cy', circ_data.y);
+  el.attr('r', circ_data.r);
+  el.style("fill", "black");
+  if(cls){
+    el.attr("class", cls);
+  }
+  return {el: el, update: (v) => { if(v){el.style("fill", circ_data.color)}else{el.style("fill", "black");}}};
+}
+  
+
 const draw_text = (parent_el, text_data, cls=null) => {
   const el = parent_el.append("text");
   el.attr("x", text_data.x);
@@ -563,6 +576,12 @@ const build_ui = (cfg) => {
 
   const mode_choice_re = mode_choices[mode_choices.length-1].re;
   const top_right_text = svg.append("g").attr("transform", `translate(${mode_choice_re}, 10)`);
+  const bulbs = [];
+  let colours = ["orange", "deeppink","green", "darkviolet"]
+
+  for (let i = 0; i<4; i++){
+    bulbs.push(draw_updateable_circle(svg,{x:1100+i*35, y:15, color:colours[i], r:15}));
+  }
 
   const text_elements = [];
   cfg.controls.status.forEach((m, i) => {
@@ -663,6 +682,7 @@ const build_ui = (cfg) => {
 	   ml_text_elements:ml_text_elements,
 	   ml_lh_trace:ml_lh_trace,
 	   lh_trace:lh_trace,
+	   bulbs:bulbs
 	 };
 }
 //Build UI ends here
@@ -774,6 +794,10 @@ websocket.onmessage = ({data}) => {
     ui_els.osc_probability[0].update(obj.osc_probs.numu,obj.osc_probs.numu_true,obj.hist);
     ui_els.osc_probability[1].update(obj.osc_probs.nue,obj.osc_probs.nue_true,obj.hist);
     ui_els.osc_probability[2].update(obj.osc_probs.bnue,obj.osc_probs.bnue_true,obj.hist);
+    ui_els.bulbs[0].update(obj.hist);
+    ui_els.bulbs[1].update(obj.noise)
+    ui_els.bulbs[2].update(ml)
+    ui_els.bulbs[3].update(slow_load)
     if (obj.start_ml){
       $(".ml_prob").show();
       $(".ml_trace").show();
