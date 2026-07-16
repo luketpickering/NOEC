@@ -1,6 +1,6 @@
 from time import sleep
 import asyncio
-from machine import Pin, I2C, SPI
+from machine import Pin, I2C, SPI, ADC
 from neopixel import NeoPixel
 import random
 import mcp23017
@@ -18,6 +18,7 @@ hist_pin = Pin(12, Pin.IN)
 noise_pin = Pin(13, Pin.IN)
 ml_pin = Pin(14, Pin.IN)
 slow_load_pin = Pin(15, Pin.IN)
+distance_pin = ADC(Pin(26))
 
 spi_adc = SPI(0, baudrate=1_000_000, polarity=0, phase=0, sck=2, mosi=3, miso=4)
 adc_a_cs = Pin(1, mode=Pin.OUT, value=1)
@@ -50,9 +51,8 @@ while True:
     vals = readfour()
     num_states = 5
     states = [0 for x in range(num_states)]
-    
-    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "hist": bool(hist_pin.value()), "noise":bool(noise_pin.value()), "start_ml":bool(ml_pin.value()), "slow_load":bool(slow_load_pin.value())}))
+    #print(distance_pin.read_u16())
+    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "hist": bool(hist_pin.value()), "noise":bool(noise_pin.value()), "start_ml":bool(ml_pin.value()), "slow_load":bool(slow_load_pin.value()), "L_km": distance_pin.read_u16() >> 6}))
     tick +=1
-    print(tick)
-    sleep(0.25)
+    sleep(0.1)
     

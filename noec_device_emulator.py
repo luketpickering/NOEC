@@ -46,7 +46,6 @@ def startEmulator( devicefd,clientfd,client_tty):
 
     hist_random = random.randint(0,do_update_prob)
     noise_random = random.randint(0,do_update_prob)
-    print(hist_random)
     if hist_random == 0:
       hist = not hist
 
@@ -54,7 +53,7 @@ def startEmulator( devicefd,clientfd,client_tty):
       noise = not noise
         
 
-    os.write(devicefd,str.encode('{{') +  obj_to_msg({"cmd": "UPDATE","hist":hist, "tick": tick, "states": states, "ADCs": vals, "noise":noise, "start_ml":False, "slow_load":False})+ str.encode('}}'))
+    os.write(devicefd,str.encode('{{') +  obj_to_msg({"cmd": "UPDATE","hist":hist, "tick": tick, "states": states, "ADCs": vals, "noise":noise, "start_ml":False, "slow_load":False, "L_km":1300})+ str.encode('}}'))
     os.write(devicefd, str.encode('\n'))
 
        # print(f"{tick} -- Update: vals = {vals}")

@@ -31,6 +31,7 @@ class InputProcessor:
     self.ml_thread = None
     self.prev_noise = False
     self.prev_hist = False
+    self.length = 1300
     
 
     for i, pdef in enumerate(self.cfg["noec"]["controls"]["parameters"]):
@@ -54,9 +55,16 @@ class InputProcessor:
       if i < len(self.param_maps):
        self. true_vals_mapped.append(self.param_maps[i](v))
     self.true_bin_num = 30
+    self.calc_true_probs(self.true_vals_mapped)
+    self.true_Es_disp, self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.true_Es, self.true_mu_probs, self.true_e_probs, self.true_e_bprobs
+    
+    self.ml_nue_probs = [0 for i in range(100)]
+    self.ml_Es = np.logspace(-0.3,0.8,100)
+    self.ml_lh = 0
 
-    self.true_Es, self.true_mu_probs, self.true_e_probs, self.true_e_bprobs = self.calc_probs(self.true_vals_mapped,1300)
-    self.true_Es_hist, self.true_mu_probs_hist, self.true_e_probs_hist, self.true_e_bprobs_hist = self.calc_probs_hist(self.true_vals_mapped,1300,  self.true_bin_num)
+  def calc_true_probs(self,mapped_vals = None, L=1300):
+    self.true_Es, self.true_mu_probs, self.true_e_probs, self.true_e_bprobs = self.calc_probs(self.true_vals_mapped,self.length)
+    self.true_Es_hist, self.true_mu_probs_hist, self.true_e_probs_hist, self.true_e_bprobs_hist = self.calc_probs_hist(self.true_vals_mapped,self.length,  self.true_bin_num)
 
     self.e_noise = np.array([random.uniform(0.9,1.1)*i for i in self.true_e_probs])
     self.e_bnoise = np.array([random.uniform(0.9,1.1)*i for i in self.true_e_bprobs])
@@ -66,11 +74,6 @@ class InputProcessor:
     self.e_bnoise_hist = np.array([random.uniform(0.9,1.1)*i for i in self.true_e_bprobs_hist])
     self.mu_noise_hist = np.array([random.uniform(0.9,1.1)*i for i in self.true_mu_probs_hist])
     
-    self.true_Es_disp, self.true_mu_probs_disp, self.true_e_probs_disp, self.true_e_bprobs_disp = self.true_Es, self.true_mu_probs, self.true_e_probs, self.true_e_bprobs
-    
-    self.ml_nue_probs = [0 for i in range(100)]
-    self.ml_Es = np.logspace(-0.3,0.8,100)
-    self.ml_lh = 0
     
   def calc_probs(self, vals, L, exp_loc = 2, exp_scale=1):
     
@@ -203,9 +206,9 @@ class InputProcessor:
       if i < len(self.param_maps):
        mapped_vals.append(self.param_maps[i](v))
     if len(Es) == self.true_bin_num:
-      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,1300,  self.true_bin_num)
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,self.length,  self.true_bin_num)
     else:
-      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,1300)
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,self.length)
     return e_osc_probs
 
   def ml_probs_func_display(self,a):
@@ -213,7 +216,7 @@ class InputProcessor:
     for i, v in enumerate(a):
       if i < len(self.param_maps):
         mapped_vals.append(self.param_maps[i](v))
-    Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(mapped_vals,1300)
+    Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(mapped_vals,self.length)
     return Es, e_osc_probs
 
   def ml_fit_to_true_sp(self,time_iter=1, noise = False):
@@ -259,9 +262,9 @@ class InputProcessor:
       if i < len(self.param_maps):
         mapped_vals.append(self.param_maps[i](v))
     if len(self.true_Es_disp) == self.true_bin_num:
-      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,1300,  self.true_bin_num)
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,self.length,  self.true_bin_num)
     else:
-      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,1300)
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,self.length)
     return (self.calculate_likelihood(e_osc_probs,self.true_e_probs_disp) + self.calculate_likelihood(e_bosc_probs,self.true_e_bprobs_disp))/2
 
 
@@ -271,9 +274,9 @@ class InputProcessor:
       if i < len(self.param_maps):
         mapped_vals.append(self.param_maps[i](v))
     if len(self.true_Es_disp) == self.true_bin_num:
-      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,1300,  self.true_bin_num)
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs_hist(mapped_vals,self.length,  self.true_bin_num)
     else:
-      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,1300)
+      Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_probs(mapped_vals,self.length)
     return self.calc_lh_disp(e_osc_probs,self.true_e_probs_disp)
 
   def get_gradient(self,cost_func, vals, h=1e-7):
@@ -308,6 +311,9 @@ class InputProcessor:
 
   def process(self, data):
     print(data)
+    self.length = round(data['L_km']/1023*2000)
+    self.calc_true_probs()
+    print(data)
     #print(data)
     data["vals"] = []
     #print(data["ADCs"])
@@ -315,10 +321,10 @@ class InputProcessor:
       if i < len(self.param_maps):
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
-    data["L_km"] = 1300
+    data["L_km"] = self.length
 
     
-    Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(data["vals"], data["L_km"])
+    Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(data["vals"], self.length)
     data["osc_probs"] = {}
     
 
@@ -327,7 +333,7 @@ class InputProcessor:
 
     if len(self.true_Es_disp) == self.true_bin_num:
       print("hist")
-      Es_lh, mu_osc_probs_lh,e_osc_probs_lh,e_bosc_probs_lh = self.calc_probs_hist(data["vals"], data["L_km"], self.true_bin_num)
+      Es_lh, mu_osc_probs_lh,e_osc_probs_lh,e_bosc_probs_lh = self.calc_probs_hist(data["vals"], self.length, self.true_bin_num)
     else:
       Es_lh, mu_osc_probs_lh,e_osc_probs_lh,e_bosc_probs_lh = Es, mu_osc_probs,e_osc_probs,e_bosc_probs
   
