@@ -577,7 +577,7 @@ const build_ui = (cfg) => {
   const mode_choice_re = mode_choices[mode_choices.length-1].re;
   const top_right_text = svg.append("g").attr("transform", `translate(${mode_choice_re}, 10)`);
   const bulbs = [];
-  let colours = ["orange", "deeppink","green", "darkviolet"]
+  let colours = ["orange", "deeppink","lime", "darkviolet"]
 
   for (let i = 0; i<4; i++){
     bulbs.push(draw_updateable_circle(svg,{x:1100+i*35, y:15, color:colours[i], r:15}));
@@ -771,6 +771,8 @@ websocket.onmessage = ({data}) => {
     //console.log(obj);
     ui_els = build_ui(obj.cfg.noec);
     $(".ml_prob").hide();
+    $(".ml_trace").hide();
+    $(".ml_scaffolding").hide()
    
     
      
@@ -801,6 +803,7 @@ websocket.onmessage = ({data}) => {
     if (obj.start_ml){
       $(".ml_prob").show();
       $(".ml_trace").show();
+      $(".ml_scaffolding").show()
       ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_probs.nue_true,obj.hist);
       console.log(ui_els.ml_text_elements[0])
       ui_els.ml_text_elements[0].update(obj.ml_status);
@@ -810,6 +813,7 @@ websocket.onmessage = ({data}) => {
     else{
       $(".ml_prob").hide();
       $(".ml_trace").hide();
+      $(".ml_scaffolding").hide()
     }
     //console.log(ui_els)
     // if(once){
