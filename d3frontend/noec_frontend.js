@@ -776,6 +776,7 @@ websocket.onmessage = ({data}) => {
     ui_els.osc_probability[2].update(obj.osc_probs.bnue,obj.osc_probs.bnue_true,obj.hist);
     if (obj.start_ml){
       $(".ml_prob").show();
+      $(".ml_trace").show();
       ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_probs.nue_true,obj.hist);
       console.log(ui_els.ml_text_elements[0])
       ui_els.ml_text_elements[0].update(obj.ml_status);

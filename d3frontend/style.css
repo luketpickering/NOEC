@@ -17,16 +17,18 @@ svg {
 }
 
 .ml_axis path, .ml_axis .tick line{
+  font-family: 'Orbitron', sans-serif;
   stroke: #FF0000;
   stroke-width: 2;
 }
 
- .ml_prob text, text.ml_prob {
+ .ml_trace text .ml_prob text, text.ml_prob {
   font-family: 'Orbitron', sans-serif;
   stroke: #FF0000;
   fill: #FF0000;
 }
 
+ 
 
 .trace text, .prob text, text.prob{
   font-family: 'Orbitron', sans-serif;
@@ -38,6 +40,20 @@ svg {
   stroke-width: 1;
   stroke: #00FF00;
   fill: None;
+}
+
+.ml_trace {
+  font-family: "Orbitron", sans-serif;
+  stroke-width: 1;
+  stroke: #FF0000;
+  fill: None;
+}
+
+.ml_trace text, .ml_prob text{
+  font-family: "Orbitron", sans-serif;
+  stroke-width: 1;
+  stroke: #FF0000;
+  fill: #FF0000;
 }
 
 .prob-series.nu {
