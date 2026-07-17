@@ -289,10 +289,10 @@ class InputProcessor:
       self.true_mu_events_disp, self.true_e_events_disp, self.true_e_bevents_disp = self.true_mu_events, self.true_e_events, self.true_e_bevents
 
   def process(self, data):
-    print(data)
-    self.length = round(data['L_km']/1023*2000)
+    print(abs(self.length-round(data['L_km']/1023*2000)))
+    if (abs(self.length-round(data['L_km']/1023*2000)) > 20):
+      self.length = round(data['L_km']/1023*2000)
     self.calc_true_events()
-    print(data)
     #print(data)
     data["vals"] = []
     data['hist'] = True
