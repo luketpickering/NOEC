@@ -236,22 +236,26 @@ const add_osc_prob= (parent_el, prob_data) => {
     .text(prob_data.title);
   
   return {el:el, update: (d,d_t,step) => {
-    let step_correction = (d_t[1][0] - d_t[0][0])/2;
+    data.length =0
+    if (step){
+	let step_correction = (d[1][0] - d[0][0])/2;
+	d.forEach((e)=>{data.push([e[0]-step_correction,e[1]])});
+      }
+      else{
+	d.forEach((e)=>{data.push(e)});
+      }
     if (inter_between){
-      data.length=0
-      d.forEach((e)=>{data.push(e)});
       nu_path[1].transition()
     .duration(300).attr("d", nu_line)
-      }
-    else{
-      data.length = 0;
-      d.forEach((e)=>{data.push(e)});
-      nu_path[1].attr("d", nu_line)
     }
-      
+    else{
+      nu_path[1].attr("d", nu_line)
+
+    }
     if(nu_line_true){
       true_data.length = 0;
       if (step){
+	let step_correction = (d_t[1][0] - d_t[0][0])/2;
 	d_t.forEach((e)=>{true_data.push([e[0]-step_correction,e[1]])});
       }
       else{
@@ -260,9 +264,11 @@ const add_osc_prob= (parent_el, prob_data) => {
       nu_path_true[1].attr("d", nu_line_true);
       if (step){
 	nu_line_true.curve(d3.curveStepAfter);
+	nu_line.curve(d3.curveStepAfter);
       }
       else{
 	nu_line_true.curve(d3.curveNatural);
+	nu_line.curve(d3.curveNatural);
       }
     }
   }}
@@ -588,13 +594,7 @@ const build_ui = (cfg) => {
     text_elements.push(draw_updatable_text(top_right_text, {x: 10+ 200*i, y: 10}, (v) => { return (m.label + ` ${v}`); }, "ticker"));
   });
 
-    
-  //text_elements.push(draw_updatable_text(top_right_text, {x: 10, y: 10}, (v) => { return `uptime [ticks]: ${v}`; }, "ticker"));
-  //text_elements.push(draw_updatable_text(top_right_text, {x: 225, y: 10}, (v) => { return `baseline [km]: ${v}`; }, "ticker"));
-  //text_elements.push(draw_updatable_text(top_right_text, {x:500, y: 10}, (v) => { return `likelihood: ${v}`; }, "ticker"));
-
   
-  console.log("Hline height"+ hline_height)
   const osc_probability = [];
   cfg.ui.plots.osc_probability.forEach((m, i) => {
     osc_probability.push(add_osc_prob(svg, {prob_i: osc_probability.length,
@@ -606,7 +606,6 @@ const build_ui = (cfg) => {
 					    dobar: m.dobar,
 					    dotrue:m.dotrue,
 					    plot_dims: scaff.plots.osc_probability,
-					    truth:m.truth,
 					    title:m.title,
 					    cls:"prob",
 					    axiscls:"",
@@ -616,6 +615,27 @@ const build_ui = (cfg) => {
 
   
   
+
+  hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
+  draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
+
+  const osc_events = [];
+  cfg.ui.plots.osc_events.forEach((m, i) => {
+    osc_events.push(add_osc_prob(svg, {prob_i: osc_events.length,
+                                      ylabel: m.ylabel,
+                                      xrange: m.xrange,
+                                      yrange: m.yrange,
+                                      x_start : 0,
+                                      y_start: hline_height,
+					    dobar: m.dobar,
+					    dotrue:m.dotrue,
+					    plot_dims: scaff.plots.osc_probability,
+					    title:m.title,
+					    cls:"prob",
+					    axiscls:"",
+					    interpolate_between:false}));
+
+  });
 
   hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
@@ -677,6 +697,7 @@ const build_ui = (cfg) => {
   return { traces: traces,
            text_elements: text_elements,
            osc_probability: osc_probability,
+	   osc_events: osc_events,
 	   machine_learning:machine_learning,
            flvtriangles: flvtriangles,
 	   ml_text_elements:ml_text_elements,
@@ -780,6 +801,7 @@ websocket.onmessage = ({data}) => {
     console.log(obj);
     //console.log(obj.hist)
     //console.log(obj.osc_probs.numu)
+    console.log(ui_els)
     likelihood = obj.osc_probs.likelihood
     score_likelihood = obj.osc_probs.score_likelihood
     console.log(score_likelihood)
@@ -793,9 +815,12 @@ websocket.onmessage = ({data}) => {
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
     ui_els.text_elements[2].update(obj.osc_probs.likelihood)
-    ui_els.osc_probability[0].update(obj.osc_probs.numu,obj.osc_probs.numu_true,obj.hist);
-    ui_els.osc_probability[1].update(obj.osc_probs.nue,obj.osc_probs.nue_true,obj.hist);
-    ui_els.osc_probability[2].update(obj.osc_probs.bnue,obj.osc_probs.bnue_true,obj.hist);
+    ui_els.osc_probability[0].update(obj.osc_probs.numu,false, false);
+    ui_els.osc_probability[1].update(obj.osc_probs.nue,false, false);
+    ui_els.osc_probability[2].update(obj.osc_probs.bnue,false, false);
+    ui_els.osc_events[0].update(obj.osc_events.numu,obj.osc_events.numu_true,true);
+    ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,true);
+    ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,true);
     ui_els.bulbs[0].update(obj.hist);
     ui_els.bulbs[1].update(obj.noise)
     ui_els.bulbs[2].update(ml)
@@ -804,7 +829,7 @@ websocket.onmessage = ({data}) => {
       $(".ml_prob").show();
       $(".ml_trace").show();
       $(".ml_scaffolding").show()
-      ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_probs.nue_true,obj.hist);
+      ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_events.nue_true,true);
       console.log(ui_els.ml_text_elements[0])
       ui_els.ml_text_elements[0].update(obj.ml_status);
       ui_els.ml_text_elements[1].update(obj.ml_likelihood);

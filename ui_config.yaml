@@ -21,13 +21,14 @@ noec:
       
   ui:
     scaffolding:
-      page: { w: 1512, h: 982 }
+      page: { w: 1512, h: 1100 }
       mode_select: { w: 120, h: 40, fs: 15 }
       plots:
         trace: { w: 300, h: 50, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         likelihood : {w: 300, h: 50, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         flvtriangles: { w: 300, ml: 50, mt: 35, mr: 5, mb: 40, nticks: 3 }
         osc_probability: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
+        osc_events: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
         likelihood: { w: 640, h: 640, ml: 20, mt: 20, mr: 0, mb: 20 }
       line: { w: 4 }
     plots:
@@ -37,11 +38,15 @@ noec:
         - { parameter: "Th23" }
         - { parameter: "dcp" }
       osc_probability:
-        - { title: "Disappearance", ylabel: "P(numu -> numu)", xrange: [0,7], yrange: [0,1], osc_channel: [14, 14], dobar: False, truth: False, dotrue: True }
-        - { title: "Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True, truth: False, dotrue: True }
-        - { title: "Appearance Bar", ylabel: "P(bnumu -> bnue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True, truth: False, dotrue: True }
+        - { title: "Disappearance", ylabel: "P(numu -> numu)", xrange: [0,7], yrange: [0,1], osc_channel: [14, 14], dotrue: False }
+        - { title: "Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dotrue: False }
+        - { title: "Appearance Bar", ylabel: "P(bnumu -> bnue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dotrue: False }
+      osc_events:
+        - { title: "Disappearance", ylabel: "P(numu -> numu)", xrange: [0,7], yrange: [0,50], osc_channel: [14, 14], dotrue: True }
+        - { title: "Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,10], osc_channel: [14, 12], dotrue: True }
+        - { title: "Appearance Bar", ylabel: "P(bnumu -> bnue)", xrange: [0,7], yrange: [0,10], osc_channel: [14, 12], dotrue: True }
       machine_learning:
-        - { title: "Machine Learning Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,0.2], osc_channel: [14, 12], dobar: True, truth: False, dotrue: True }
+        - { title: "Machine Learning Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,10], osc_channel: [14, 12], dobar: True, truth: False, dotrue: True }
       flvtriangles:
         - {  }
       likelihood:
