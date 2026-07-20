@@ -152,6 +152,82 @@ const add_param_trace = (parent_el, trace_data) => {
   }};
 }
 
+const add_two_d_lh = (parent_el, lh_data) => {
+  const pd = lh_data.plot_dims;
+
+  const i = lh_data.lh_i;
+  const lpos = lh_data.x_start + i*(pd.w + pd.ml + pd.mb);
+  const tpos = lh_data.y_start;
+
+  console.log(lh_data.lh_i)
+  console.log(lpos);
+  console.log(tpos);
+
+  const el = parent_el.append("g")
+                      .attr("transform", `translate(${lpos},${tpos})`)
+                      .attr("class", lh_data.cls)
+        .attr("id", lh_data.cls + `-${i}`);
+
+  // Declare the x (horizontal position) scale.
+  const x = d3.scaleLinear()
+      .domain(lh_data.xrange)
+      .range([0, pd.w]);
+
+  // Declare the y (vertical position) scale.
+  const y = d3.scaleLinear()
+      .domain(lh_data.yrange)
+      .range([pd.h, 0]);
+
+  const xax = el.append("g")
+      .attr("class", lh_data.axiscls + "axis")
+      .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
+      .call(d3.axisBottom(x).ticks(pd.nxticks))
+
+  xax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${pd.w*0.5}, ${pd.mb*0.75})`)
+       .text(`${lh_data.xlabel}`);
+
+  // Add the y-axis.
+  const yax = el.append("g")
+      .attr("class", lh_data.axiscls + "axis")
+      .attr("transform", `translate(${pd.ml},${pd.mt})`)
+      .call(d3.axisLeft(y).ticks(pd.nyticks))
+
+  yax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
+    .text(`${lh_data.ylabel}`);
+
+  const lh_color = d3.interpolateHsl("red", "lime") 
+  const data = [];
+  const points = []
+  const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
+  for (let i =0; i<1000; i++) {
+    points.push(pg.append("circle")
+        .attr("r", 1)
+          .attr("cx",x(0))
+          .attr("cy", y(0))  
+                .attr("fill", "black"));
+  }
+  const add_point = () => {
+    let numPoints = data.slice(-1000).length
+    data.slice(-1000).forEach((m, i) => {
+      points[i].attr("r", 1)
+          .attr("cx",x(m[0]))
+          .attr("cy", y(m[1]))  
+        .attr("fill", lh_color(m[2]/100))
+        .attr("fill-opacity", (i+1)/numPoints*100)
+        .attr("class","")
+    })
+  };
+  return {el:el, update: (d) => {
+    data.push(d);
+    add_point();
+  }}
+  
+}
+
 const add_osc_prob= (parent_el, prob_data) => {
 
   const pd = prob_data.plot_dims;
@@ -533,7 +609,13 @@ const build_ui = (cfg) => {
       fs: scaff.mode_select.fs }));
   });
 
+
   const scaff_el = svg.append("g").attr("class", "scaffolding");
+
+  
+  //scaff.labels.forEach((m,i) =>{
+    //draw_text(svg,{x: 450+ 200*i, y: 100, text:m.text}, "prob").attr("transform", `translate,rotate(270)`);
+  //})
 
   let hline_height = scaff.mode_select.h + 2;
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
@@ -690,6 +772,44 @@ const build_ui = (cfg) => {
                                       plot_dims: scaff.plots.flvtriangles}));
 
   });
+  hline_height += scaff.plots.flvtriangles.w +100;
+
+   draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"scaffolding");
+
+  const two_d_lhs = [];
+
+  cfg.ui.plots.two_d_likelihood.forEach((m, i) => {
+    console.log(m);
+    console.log({lh_i: two_d_lhs.length,
+                                    ylabel: m.ylabel,
+                                    xlabel: m.xlabel,
+                                      xrange: m.xrange,
+                                      yrange: m.yrange,
+                                      x_start : 0,
+                                      y_start: hline_height + 10,
+					    plot_dims: scaff.plots.two_d_likelihood,
+					    title:m.title,
+					    cls:"prob",
+					    axiscls:"",
+					    interpolate_between:false});
+
+  });
+  
+  cfg.ui.plots.two_d_likelihood.forEach((m, i) => {
+  two_d_lhs.push(add_two_d_lh(svg, {lh_i: two_d_lhs.length,
+                                    ylabel: m.ylabel,
+                                    xlabel: m.xlabel,
+                                      xrange: m.xrange,
+                                      yrange: m.yrange,
+                                      x_start : 0,
+                                      y_start: hline_height,
+					    plot_dims: scaff.plots.two_d_likelihood,
+					    title:m.title,
+					    cls:"prob",
+					    axiscls:"",
+					    interpolate_between:false}));
+
+  });
 
   // Append the SVG element.
   container.append(svg.node());
@@ -703,7 +823,8 @@ const build_ui = (cfg) => {
 	   ml_text_elements:ml_text_elements,
 	   ml_lh_trace:ml_lh_trace,
 	   lh_trace:lh_trace,
-	   bulbs:bulbs
+	   bulbs:bulbs,
+           two_d_lhs: two_d_lhs,
 	 };
 }
 //Build UI ends here
@@ -722,6 +843,7 @@ let noise = false
 let hist = false
 let slow_load = false
 let ml = false
+let ml_status = "in progress"
 let dialog
 let score = 0
 
@@ -777,6 +899,10 @@ $(document).on("keypress", function( event ){
   if (hist){
     score *=1.5;
   }
+
+    if (ml == "Complete"){
+      score *=2
+    }
   score = Math.round(score)
   $('#score-info').text("Your score is: " + score);
     dialog.dialog("open");
@@ -798,6 +924,7 @@ websocket.onmessage = ({data}) => {
     
      
   } else if(obj.cmd == "UPDATE"){
+    console.log(obj.vals);
     console.log(obj);
     //console.log(obj.hist)
     //console.log(obj.osc_probs.numu)
@@ -825,6 +952,9 @@ websocket.onmessage = ({data}) => {
     ui_els.bulbs[1].update(obj.noise)
     ui_els.bulbs[2].update(ml)
     ui_els.bulbs[3].update(slow_load)
+    ui_els.two_d_lhs[0].update([obj.vals[1], obj.vals[0], likelihood]);
+    ui_els.two_d_lhs[1].update([obj.vals[2], obj.vals[0], likelihood]);
+    ui_els.two_d_lhs[2].update([obj.vals[2], obj.vals[1], likelihood]);
     if (obj.start_ml){
       $(".ml_prob").show();
       $(".ml_trace").show();
@@ -847,3 +977,8 @@ websocket.onmessage = ({data}) => {
     // }
   }
 };
+
+//labels:
+        //- { text: "Oscillations"}
+        //- { text: "Events"}
+        //- { text: "ML"}
