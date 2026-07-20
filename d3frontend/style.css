@@ -201,3 +201,75 @@ td, th{
 #dialog button{
     background-color:black;
 }
+
+.paramSlider{
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    background-color:#333;
+    padding:2.5px 5px 2.5px 5px;
+}
+
+.paramSlider::-webkit-slider-thumb{
+    background-color:white;
+    border:0px;
+    border-radius:0;
+}
+
+
+.paramSlider::-moz-range-thumb{
+    background-color:white;
+    border:0px;
+    border-radius:0;
+}
+
+.toggle {
+  position: relative;
+  top:0px;
+  display: inline-block;
+  width: 45px;
+  height: 25px;
+}
+
+.toggle input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #333;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 15px;
+  width: 15px;
+  left: 5px;
+  bottom: 5px;
+  background-color: #FFF;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #00ff00;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+label{
+    position:relative;
+    top:-5px;
+    font-family: 'Orbitron', sans-serif;
+    text-anchor: middle;
+    background-color:black;
+    color:#00FF00;
+}
+

@@ -2,6 +2,9 @@ from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
+from noec_ws_server import InputProcessor
+import json
+import yaml
 
 import os
 
@@ -17,6 +20,8 @@ db = SQLAlchemy(app)
 app.config.from_mapping(
         SECRET_KEY='dev',
     )
+
+wcInputProcessor = None
 
 class Score(db.Model):
    id: Mapped[int] = mapped_column(primary_key=True)
@@ -41,6 +46,15 @@ if not os.path.exists('db.sqlite'):
 def home():
    return render_template('index.html')
 
+
+@app.route('/web-controls')
+def web_controls():
+   global wcInputProcessor
+   with open("ui_config.yaml", 'r') as yaml_in:
+    uicfg = yaml.safe_load(yaml_in)
+   wcInputProcessor = InputProcessor(uicfg)
+   return render_template('webcontrols.html')
+
 @app.route('/leaderboard')
 def leaderboard():
    print(Score.__table__.columns)
@@ -58,6 +72,23 @@ def add_score():
       print(row)
    return '<p>Hello</p>'
    
+@app.route('/update_input', methods=['POST'])
+def update_input():
+   global wcInputProcessor
+   if request.method == "POST":
+      inputDict = dict(request.form.lists())
+      print(inputDict)
+      processDict = { "ADCs": inputDict['ADCs[]'], "noise": inputDict['noise'] == ["true"], 'start_ml': inputDict["ml_start"] == ['true'], 'slow_load':inputDict['slow_load'] == ['true'], "states" :[0,0,0,0,0], "L_km": int(inputDict['L_km'][0]), "tick":0}
+      print(processDict)
+   return wcInputProcessor.process(processDict)
+
+
+@app.route('/load_ui', methods=['POST'])
+def load_ui():
+   if request.method == "POST":
+       with open("ui_config.yaml", 'r') as yaml_in:
+          uicfg = yaml.safe_load(yaml_in)
+       return  {"cmd": "ui_start", "cfg": uicfg}
 
 
 

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>NOEC</title>
+    <link href='https://fonts.googleapis.com/css?family=Orbitron' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="style.css">
+    <script src="d3.v7.min.js"></script>
+    <script src="jquery-4.0.0.min.js"></script>
+    <script src ="jquery-ui.js"></script>
+    <script type="module" src="wc_noec_frontend.js"></script>
+  </head>
+  <body>
+    <div id="dialog">
+      <form>
+	<p id="score-info"></p>
+	<p>To add your score to the leaderboard, provide a name:</p>
+	<label for="username">Name</label>
+	<input type="text"  name="username" autocomplete="off">
+      </form>
+    </div>
+    <div id="container">
+      <div id="controls">
+      <label for="Dm32">Dm32</label>
+      <input type="range" id="Dm32" class="paramSlider"  name="Dm32" min="0" max="1024" step="1"/>
+
+      <label for="Dm32">Th23</label>
+      <input type="range" id="Th23" class="paramSlider" name="Th23" min="0" max="1024" step="1"/>
+
+      <label for="Dm32">dcp</label>
+      <input type="range" id="dcp" class="paramSlider" name="dcp" min="0" max="1024" step="1"/>
+
+      <label for="L_km">Baseline</label>
+      <input type="range" id="L_km" class="paramSlider" name="L_km" min="0" max="1024" step="1"/>
+
+      <label for="noise">Noise</label>
+      <label class="toggle">
+        <input type="checkbox" id="noise" name="noise" />
+        <span class="slider"></span>
+      </label>
+
+      <label for="ml_start">ML</label>
+      <label class="toggle">
+        <input type="checkbox" id="ml_start" name="ml_start" />
+        <span class="slider"></span>
+      </label>
+
+      <label for="slow_load">SD</label>
+      <label class="toggle">
+        <input type="checkbox" id="slow_load" name="slow_load"/>
+        <span class="slider"></span>
+      </label>
+</div>
+    </div>
+    
+
+  </body>
+</html>
