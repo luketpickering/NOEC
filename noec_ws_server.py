@@ -58,8 +58,10 @@ class InputProcessor:
     self.noise = [[random.uniform(0.9,1.1) for i in range(self.true_bin_num)] for i in range(3)]
     self.calc_true_events()
     self.true_Es_disp, self.true_mu_events_disp, self.true_e_events_disp, self.true_e_bevents_disp = self.true_Es, self.true_mu_events, self.true_e_events, self.true_e_bevents
-    
+
+    self.ml_numu_events = [0 for i in range(100)]
     self.ml_nue_events = [0 for i in range(100)]
+    self.ml_nue_bevents = [0 for i in range(100)]
     self.ml_Es = np.logspace(-0.3,0.8,100)
     self.ml_lh = 0
 
@@ -208,7 +210,7 @@ class InputProcessor:
       if i < len(self.param_maps):
         mapped_vals.append(self.param_maps[i](v))
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_events(mapped_vals,self.length, self.true_bin_num)
-    return Es, e_osc_probs
+    return Es, mu_osc_probs, e_osc_probs,e_bosc_probs
 
   def ml_fit_to_true_sp(self,time_iter=1, noise = False):
     fitting_Es = copy.deepcopy(self.true_Es_disp)
@@ -241,7 +243,7 @@ class InputProcessor:
         elif currentVals[i] < 1:
           currentVals[i] = 1
       steps += 1
-      self.ml_Es, self.ml_nue_events = self.ml_probs_func_display(currentVals)
+      self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(currentVals)
       self.ml_lh = self.ml_lh_disp(currentVals)
       
       
@@ -334,8 +336,10 @@ class InputProcessor:
         data['ml_status'] = "Complete"
       else:
         data["ml_status"] = "In Progress"
-
+        
+      data["osc_probs"]["mlnumu"] = [ [self.ml_Es[i], self.ml_numu_events[i]] for i in range(len(self.ml_numu_events))]
       data["osc_probs"]["mlnue"] = [ [self.ml_Es[i], self.ml_nue_events[i]] for i in range(len(self.ml_nue_events))]
+      data["osc_probs"]["mlnueb"] = [ [self.ml_Es[i], self.ml_nue_bevents[i]] for i in range(len(self.ml_nue_bevents))]
       data["ml_likelihood"] = self.ml_lh
 
     data["osc_probs"]["numu"] = [ [Es[i], mu_osc_probs[i]] for i in range(len(Es))]

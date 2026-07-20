@@ -64,6 +64,12 @@ svg {
 
 .prob-series.nutrue {
   stroke-width: 2;
+  stroke: #0000FF;
+  fill: None;
+}
+
+.prob-series.numl {
+  stroke-width: 2;
   stroke: #FF0000;
   fill: None;
 }

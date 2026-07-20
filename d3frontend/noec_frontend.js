@@ -159,10 +159,6 @@ const add_two_d_lh = (parent_el, lh_data) => {
   const lpos = lh_data.x_start + i*(pd.w + pd.ml + pd.mb);
   const tpos = lh_data.y_start;
 
-  console.log(lh_data.lh_i)
-  console.log(lpos);
-  console.log(tpos);
-
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
                       .attr("class", lh_data.cls)
@@ -236,7 +232,6 @@ const add_osc_prob= (parent_el, prob_data) => {
   const lpos = prob_data.x_start + i*(pd.w + pd.ml + pd.mb);
   const tpos = prob_data.y_start;
   const inter_between = prob_data.interpolate_between
- // console.log(inter_between)
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
@@ -286,8 +281,16 @@ const add_osc_prob= (parent_el, prob_data) => {
       .y((d) => { return y(d[1]); });
   }
 
+  let nu_line_ml = null
+  if(prob_data.show_ml){
+    nu_line_ml = d3.line()
+                 .x((d) => { return x(d[0]); })
+      .y((d) => { return y(d[1]); });
+  }
+
   const data = [];
   const true_data = []
+  const ml_data = []
   const build_path = (line, cls, d_source) => {
     const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
     const p = pg.append("path")
@@ -299,19 +302,22 @@ const add_osc_prob= (parent_el, prob_data) => {
     
   let nu_path = build_path(nu_line, prob_data.cls +"-series nu",data);
   let nu_path_true = null;
+  let nu_path_ml;
   if(nu_line_true){
     nu_path_true = build_path(nu_line_true, prob_data.cls + "-series nutrue", true_data);
   }
-  console.log(prob_data.title)
-  console.log(pd.h)
-  console.log(tpos)
+
+  if(nu_line_ml){
+    nu_path_ml = build_path(nu_line_ml, prob_data.cls + "-series numl", ml_data);
+  }
+  
   el.append("text")
     .attr("x", (pd.w/2))                    
     .attr("y", 20)
        .attr("text-anchor", "middle") 
     .text(prob_data.title);
   
-  return {el:el, update: (d,d_t,step) => {
+  return {el:el, update: (d,d_t,d_ml,step) => {
     data.length =0
     if (step){
 	let step_correction = (d[1][0] - d[0][0])/2;
@@ -338,17 +344,29 @@ const add_osc_prob= (parent_el, prob_data) => {
 	d_t.forEach((e)=>{true_data.push(e)});
       }
       nu_path_true[1].attr("d", nu_line_true);
-      if (step){
-	nu_line_true.curve(d3.curveStepAfter);
-	nu_line.curve(d3.curveStepAfter);
+     if (step){
+       nu_line_true.curve(d3.curveStepAfter);
+       nu_line.curve(d3.curveStepAfter);
       }
       else{
 	nu_line_true.curve(d3.curveNatural);
 	nu_line.curve(d3.curveNatural);
       }
     }
+   if(nu_line_ml){
+      ml_data.length = 0;
+      if (step){
+	let step_correction = (d_ml[1][0] - d_ml[0][0])/2;
+	d_ml.forEach((e)=>{ml_data.push([e[0]-step_correction,e[1]])});
+        nu_line_ml.curve(d3.curveStepAfter);
+      }
+      else{
+	d_ml.forEach((e)=>{ml_data.push(e)});
+        nu_line_ml.curve(d3.curveNatural);
+      }
+     nu_path_ml[1].attr("d", nu_line_ml);
   }}
-};
+         }};
 
 const add_3flavor_triangle = (parent_el, flvtri_data) => {
 
@@ -691,7 +709,8 @@ const build_ui = (cfg) => {
 					    title:m.title,
 					    cls:"prob",
 					    axiscls:"",
-					    interpolate_between:false}));
+					    interpolate_between:false,
+                                            show_ml:false,}));
 
   });
 
@@ -715,7 +734,8 @@ const build_ui = (cfg) => {
 					    title:m.title,
 					    cls:"prob",
 					    axiscls:"",
-					    interpolate_between:false}));
+				       interpolate_between:false,
+                                       show_ml:true,}));
 
   });
 
@@ -738,7 +758,8 @@ const build_ui = (cfg) => {
 					    title:ml.title,
 					      cls: "ml_prob",
 					      axiscls:"ml_",
-					      interpolate_between:true});
+					      interpolate_between:true,
+                                              show_ml:false,});
   
   let ml_lh_trace = add_param_trace(svg, {trace_i: traces.length,
                                         param_i: 0,
@@ -751,7 +772,6 @@ const build_ui = (cfg) => {
 					cls: "ml_"});
 
   const ml_text_elements = [];
-  console.log(cfg.ui.ml_status)
   cfg.ui.ml_status.forEach((m, i) => {
     ml_text_elements.push(draw_updatable_text(top_right_text, {x: 450+ 200*i, y: hline_height + 40}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
   });
@@ -777,23 +797,6 @@ const build_ui = (cfg) => {
    draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"scaffolding");
 
   const two_d_lhs = [];
-
-  cfg.ui.plots.two_d_likelihood.forEach((m, i) => {
-    console.log(m);
-    console.log({lh_i: two_d_lhs.length,
-                                    ylabel: m.ylabel,
-                                    xlabel: m.xlabel,
-                                      xrange: m.xrange,
-                                      yrange: m.yrange,
-                                      x_start : 0,
-                                      y_start: hline_height + 10,
-					    plot_dims: scaff.plots.two_d_likelihood,
-					    title:m.title,
-					    cls:"prob",
-					    axiscls:"",
-					    interpolate_between:false});
-
-  });
   
   cfg.ui.plots.two_d_likelihood.forEach((m, i) => {
   two_d_lhs.push(add_two_d_lh(svg, {lh_i: two_d_lhs.length,
@@ -845,13 +848,11 @@ let slow_load = false
 let ml = false
 let ml_status = "in progress"
 let dialog
+
 let score = 0
 
 function addScore(){
   let name = $('input[name=username]').val()
-  console.log(name)
-  console.log(score)
-  console.log(hist)
   if (name != ""){
     $.post("/add_score",{username:name,score:score, hist:hist, noise:noise, ml:ml, slow_load:slow_load});
   }
@@ -924,15 +925,10 @@ websocket.onmessage = ({data}) => {
     
      
   } else if(obj.cmd == "UPDATE"){
-    console.log(obj.vals);
-    console.log(obj);
-    //console.log(obj.hist)
+    console.log(obj)
     //console.log(obj.osc_probs.numu)
-    console.log(ui_els)
     likelihood = obj.osc_probs.likelihood
     score_likelihood = obj.osc_probs.score_likelihood
-    console.log(score_likelihood)
-    console.log(obj.hist)
     noise = obj.noise
     hist = obj.hist
     ml = obj.start_ml
@@ -942,12 +938,19 @@ websocket.onmessage = ({data}) => {
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
     ui_els.text_elements[2].update(obj.osc_probs.likelihood)
-    ui_els.osc_probability[0].update(obj.osc_probs.numu,false, false);
-    ui_els.osc_probability[1].update(obj.osc_probs.nue,false, false);
-    ui_els.osc_probability[2].update(obj.osc_probs.bnue,false, false);
-    ui_els.osc_events[0].update(obj.osc_events.numu,obj.osc_events.numu_true,true);
-    ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,true);
-    ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,true);
+    ui_els.osc_probability[0].update(obj.osc_probs.numu,false, false, false);
+    ui_els.osc_probability[1].update(obj.osc_probs.nue,false, false, false);
+    ui_els.osc_probability[2].update(obj.osc_probs.bnue,false, false, false);
+    if (obj.start_ml){
+      ui_els.osc_events[0].update(obj.osc_events.numu,obj.osc_events.numu_true,obj.osc_probs.mlnumu,true);
+      ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,obj.osc_probs.mlnue,true);
+      ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,obj.osc_probs.mlnueb,true);
+    }
+    else{
+      ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,[[0,0], [0,0]],true);
+      ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,[[0,0], [0,0]],true);
+      ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,[[0,0], [0,0]],true);
+    }
     ui_els.bulbs[0].update(obj.hist);
     ui_els.bulbs[1].update(obj.noise)
     ui_els.bulbs[2].update(ml)
@@ -959,7 +962,7 @@ websocket.onmessage = ({data}) => {
       $(".ml_prob").show();
       $(".ml_trace").show();
       $(".ml_scaffolding").show()
-      ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_events.nue_true,true);
+      ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_events.nue_true,false,true);
       console.log(ui_els.ml_text_elements[0])
       ui_els.ml_text_elements[0].update(obj.ml_status);
       ui_els.ml_text_elements[1].update(obj.ml_likelihood);
