@@ -157,7 +157,7 @@ class InputProcessor:
              "L": L }
 
   def calculate_likelihood(self, predicted,actual):
-      return np.sum((predicted -actual)**2/actual)
+      return np.sum((predicted -actual)**2/actual)/2
 
   def calc_lh_disp(self, predicted,actual):
     return round(100/np.exp(self.calculate_likelihood(predicted,actual)/2),0)
@@ -352,7 +352,7 @@ class InputProcessor:
     data["osc_events"]["nue"] = [[Es_ev[i], e_osc_events[i]] for i in range(len(Es_ev))]
     data["osc_events"]["bnue"] = [[Es_ev[i], e_bosc_events[i]] for i in range(len(Es_ev))]
     data["osc_probs"]["likelihood"] = self.calc_lh_disp(e_osc_events, self.true_e_events_disp)
-    data["osc_probs"]["score_likelihood"] = self.calc_lh_disp(e_osc_events, self.true_e_events)
+    data["osc_probs"]["score_likelihood"] = round((self.calc_lh_disp(mu_osc_events, self.true_mu_events) + self.calc_lh_disp(e_osc_events, self.true_e_events) + self.calc_lh_disp(e_bosc_events, self.true_e_bevents))/3)
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
 
     self.previous_hist = data["hist"]

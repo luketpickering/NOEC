@@ -947,7 +947,7 @@ websocket.onmessage = ({data}) => {
       ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,obj.osc_probs.mlnueb,true);
     }
     else{
-      ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,[[0,0], [0,0]],true);
+      ui_els.osc_events[0].update(obj.osc_events.nue,obj.osc_events.nue_true,[[0,0], [0,0]],true);
       ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,[[0,0], [0,0]],true);
       ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,[[0,0], [0,0]],true);
     }
