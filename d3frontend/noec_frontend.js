@@ -781,32 +781,6 @@ const build_ui = (cfg) => {
     text_elements.push(draw_updatable_text(top_right_text, {x: 10+ 200*i, y: 10}, (v) => { return (m.label + ` ${v}`); }, "ticker"));
   });
 
-  
-  const osc_probability = [];
-  cfg.ui.plots.osc_probability.forEach((m, i) => {
-    osc_probability.push(add_osc_prob(svg, {prob_i: osc_probability.length,
-                                      ylabel: m.ylabel,
-                                      xrange: m.xrange,
-                                      yrange: m.yrange,
-                                      x_start : 0,
-                                      y_start: hline_height,
-					    dobar: m.dobar,
-					    dotrue:m.dotrue,
-					    plot_dims: scaff.plots.osc_probability,
-					    title:m.title,
-					    cls:"prob",
-					    axiscls:"",
-					    interpolate_between:false,
-                                            show_ml:false,}));
-
-  });
-
-  
-  
-
-  hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
-  draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
-
   const osc_events = [];
   cfg.ui.plots.osc_events.forEach((m, i) => {
     osc_events.push(add_osc_prob(svg, {prob_i: osc_events.length,
@@ -828,11 +802,14 @@ const build_ui = (cfg) => {
 
   hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
-  
+
+  hline_height += 26;
+
+  draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"ml_scaffolding");
 
   
   let ml = cfg.ui.plots.machine_learning[0];
-  const machine_learning = add_osc_prob(svg, {prob_i: 1,
+  const machine_learning = add_osc_prob(svg, {prob_i: 0,
                                       ylabel: ml.ylabel,
                                       xrange: ml.xrange,
                                       yrange: ml.yrange,
@@ -848,19 +825,19 @@ const build_ui = (cfg) => {
 					      interpolate_between:true,
                                               show_ml:false,});
   
-  let ml_lh_trace = add_param_trace(svg, {trace_i: traces.length,
+  let ml_lh_trace = add_param_trace(svg, {trace_i: 0,
                                         param_i: 0,
                                         label: cfg.controls.likelihood[1].label,
                                         units: cfg.controls.likelihood[1].units,
                                         yrange: cfg.controls.likelihood[1].range,
-                                        x_start : -120,
+                                        x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml,
                                         y_start: hline_height +60,
                                         plot_dims: scaff.plots.trace,
 					cls: "ml_"});
 
   const ml_text_elements = [];
   cfg.ui.ml_status.forEach((m, i) => {
-    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 450+ 200*i, y: hline_height + 40}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
+    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 0 +200*i, y: hline_height + 40}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
   });
   console.log(ml_text_elements)
 
@@ -872,7 +849,7 @@ const build_ui = (cfg) => {
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : 1000,
+                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml,
                                       y_start: hline_height +150,
                                       num_walkers:10,
 					    plot_dims: scaff.plots.ml_walker,
@@ -884,25 +861,14 @@ const build_ui = (cfg) => {
   });
 
   
-  hline_height += 26;
-
-  draw_line(scaff_el, {ends:[[500, hline_height], [page_w,hline_height]], lw:4},"ml_scaffolding");
 
 
-  draw_line(scaff_el, {ends:[[500, hline_height  +scaff.plots.osc_probability.h+150], [page_w,hline_height +scaff.plots.osc_probability.h+150]], lw:4},"ml_scaffolding");
 
-  
-  const flvtriangles = [];
-  cfg.ui.plots.flvtriangles.forEach((m, i) => {
-    flvtriangles.push(add_3flavor_triangle(svg, {flvtri_i: flvtriangles.length,
-                                      x_start : 0,
-                                      y_start: hline_height,
-                                      plot_dims: scaff.plots.flvtriangles}));
+  draw_line(scaff_el, {ends:[[0, hline_height  +scaff.plots.osc_probability.h+150], [page_w,hline_height +scaff.plots.osc_probability.h+150]], lw:4},"ml_scaffolding");
 
-  });
   hline_height += scaff.plots.flvtriangles.w +100;
 
-   draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"scaffolding");
+  draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"scaffolding");
 
   const two_d_lhs = [];
   
@@ -927,10 +893,8 @@ const build_ui = (cfg) => {
 
   return { traces: traces,
            text_elements: text_elements,
-           osc_probability: osc_probability,
 	   osc_events: osc_events,
 	   machine_learning:machine_learning,
-           flvtriangles: flvtriangles,
 	   ml_text_elements:ml_text_elements,
 	   ml_lh_trace:ml_lh_trace,
 	   lh_trace:lh_trace,
@@ -1048,9 +1012,6 @@ websocket.onmessage = ({data}) => {
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
     ui_els.text_elements[2].update(obj.osc_probs.likelihood)
-    ui_els.osc_probability[0].update(obj.osc_probs.numu,false, false, false);
-    ui_els.osc_probability[1].update(obj.osc_probs.nue,false, false, false);
-    ui_els.osc_probability[2].update(obj.osc_probs.bnue,false, false, false);
     if (obj.start_ml){
       ui_els.osc_events[0].update(obj.osc_events.numu,obj.osc_events.numu_true,obj.osc_probs.mlnumu,true);
       ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,obj.osc_probs.mlnue,true);
@@ -1093,10 +1054,5 @@ websocket.onmessage = ({data}) => {
       $(".ml_trace").hide();
       $(".ml_scaffolding").hide()
     }
-    //console.log(ui_els)
-    // if(once){
-      ui_els.flvtriangles[0].update(obj.trans_prob_max, obj.L_km);
-    //   once = false;
-    // }
   }
 };
