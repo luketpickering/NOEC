@@ -235,8 +235,8 @@ const add_ml_walker = (parent_el, walker_data) => {
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
-                      .attr("class", walker_data.cls)
-        .attr("id", walker_data.cls + `-${i}`);
+                      .attr("class", walker_data.cls + " walker-param")
+        .attr("id", "walker-param-map" + `-${i}`);
 
   // Declare the x (horizontal position) scale.
   const x = d3.scaleLinear()
@@ -1077,10 +1077,15 @@ websocket.onmessage = ({data}) => {
       ui_els.ml_text_elements[1].update(obj.ml_likelihood);
       ui_els.ml_lh_trace.update(obj.ml_likelihood);
       if (obj.ml_mode == "MCMC"){
+        $(".walker-param").show();
         ui_els.ml_walkers[0].update(obj.ml_walker_pos[0]);
         ui_els.ml_walkers[1].update(obj.ml_walker_pos[1]);
         ui_els.ml_walkers[2].update(obj.ml_walker_pos[2]);
       }
+      else{
+        $(".walker-param").hide();
+      }
+      
     }
     else{
       $(".ml_prob").hide();
