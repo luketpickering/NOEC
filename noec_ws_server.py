@@ -59,11 +59,12 @@ class InputProcessor:
     self.calc_true_events()
     self.true_Es_disp, self.true_mu_events_disp, self.true_e_events_disp, self.true_e_bevents_disp = self.true_Es, self.true_mu_events, self.true_e_events, self.true_e_bevents
 
-    self.ml_numu_events = [0 for i in range(100)]
-    self.ml_nue_events = [0 for i in range(100)]
-    self.ml_nue_bevents = [0 for i in range(100)]
-    self.ml_Es = np.logspace(-0.3,0.8,100)
+    self.ml_numu_events = [0 for i in range(self.true_bin_num)]
+    self.ml_nue_events = [0 for i in range(self.true_bin_num)]
+    self.ml_nue_bevents = [0 for i in range(self.true_bin_num)]
+    self.ml_Es= np.linspace(0.5,6.4,self.true_bin_num)
     self.ml_lh = 0
+    self.ml_walker_pos = [[0,0,0] for _ in range(10)]
 
   def calc_true_events(self):
     self.true_Es, self.true_mu_events, self.true_e_events, self.true_e_bevents = self.calc_events(self.true_vals_mapped,self.length, self.true_bin_num)
@@ -195,6 +196,8 @@ class InputProcessor:
     self.set_true_disp(noise)
     
 
+  def Pearson_N2LLH(self,data_hist, predicted_hist):
+    return np.sum(np.power(predicted_hist - data_hist,2)/data_hist)
 
   def ml_probs_func_sp(self,Es, a, b,c,d):
     mapped_vals = []
@@ -223,23 +226,69 @@ class InputProcessor:
       self.ml_Es, self.ml_nue_events = self.ml_probs_func_display(*i)
       time.sleep(time_iter)
 
+  def mcmc_take_step(self,current, prob_func):
+    step = [ np.random.normal(c, 100) for c in current]
+    print("current",prob_func(current))
+    print("step", prob_func(step))
+    if prob_func(step) > prob_func(current):
+        print("stepped - better ll")
+        return step
+    else:
+        accept_threshold = prob_func(step)/prob_func(current)
+        print("accept_threshold", accept_threshold)
+        if np.random.rand() < accept_threshold:
+            print("stepped - accept threshold")
+            return step
+        else:
+            print("stayed")
+            return current
+
+  def log_uniform_prior(self,params):
+    Dm32, Th23, dcp = params
+    if 0 <= Dm32 <= 1024 and 0<=Th23 <=1024 and 0 <= dcp <= 1024:
+        return 0
+    return -np.inf
+  
+  def ml_mcmc(self, time_iter=0.1, noise=False, num_walkers = 10):
+     time.sleep(2)
+     fitting_Es = copy.deepcopy(self.true_Es_disp)
+     poster_func =  lambda x: self.calc_lh_disp(self.ml_probs_func_display(x),self.true_e_events_disp) + self.log_uniform_prior(x)
+     vals = [[[random.randint(0,1024) for _ in range(3)]] for j in range(num_walkers)]
+     posts = [0 for i in range(num_walkers)]
+     for i in range(10000):
+       for j in range(num_walkers):
+         posts[j] = poster_func(vals[j][-1])
+         vals[j].append(self.mcmc_take_step(vals[j][-1], poster_func))
+       ml_walker_pos = [vals[k][-1] for k in range(num_walkers)]
+       for j in range(len(ml_walker_pos)):
+         for ii, v in enumerate(ml_walker_pos[j]):
+           if ii < len(self.param_maps):
+             self.ml_walker_pos[j][ii] =self.param_maps[ii](v)
+       best_walk = posts.index(max(posts))
+       print(best_walk)
+       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevent = self.ml_probs_func_display(vals[best_walk][i])
+       self.ml_lh = self.ml_lh_disp(vals[best_walk][i])
+       print("i",i)
+       time.sleep(time_iter)
+     
+
   def ml_fit_to_true(self, time_iter=0.1, noise=False):
     time.sleep(2)
     fitting_Es = copy.deepcopy(self.true_Es_disp)
-    currentVals = [random.randint(0,1044) for i in range(4)]
+    currentVals = [random.randint(0,1024) for i in range(4)]
     learning_step = 10000
     steps = 0
     print("likelihood",self.ml_lh)
     while self.ml_lh <100 or (steps <500 and self.ml_lh<95):
       time.sleep(time_iter)
       if steps >600 :
-        currentVals = [random.randint(0,1044) for i in range(4)]
+        currentVals = [random.randint(0,1024) for i in range(4)]
         steps = 0
       cost_grad = self.get_gradient(self.cost,currentVals)
       for i in range(len(currentVals)):
         currentVals[i] -= learning_step*cost_grad[i]
-        if currentVals[i] > 1043:
-          currentVals[i] = 1043
+        if currentVals[i] > 1023:
+          currentVals[i] = 1023
         elif currentVals[i] < 1:
           currentVals[i] = 1
       steps += 1
@@ -304,6 +353,7 @@ class InputProcessor:
         data["vals"].append(self.param_maps[i](v))
     #print(data["vals"])
     data["L_km"] = self.length
+    data["start_ml"] =True
 
     
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(data["vals"], self.length)
@@ -325,11 +375,15 @@ class InputProcessor:
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['noise'],))
         self.load_thread.start()
+    data["ml_mode"] = "MCMC" 
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):
         print("Thread started")
-        self.ml_thread = threading.Thread(target = self.ml_fit_to_true)
+        if data['ml_mode'] == "MCMC":
+          self.ml_thread = threading.Thread(target=self.ml_mcmc)
+        else:
+          self.ml_thread = threading.Thread(target = self.ml_fit_to_true)
         self.ml_thread.start()
         data["ml_status"] = "In Progress"
       elif not self.ml_thread.is_alive():
@@ -341,6 +395,7 @@ class InputProcessor:
       data["osc_probs"]["mlnue"] = [ [self.ml_Es[i], self.ml_nue_events[i]] for i in range(len(self.ml_nue_events))]
       data["osc_probs"]["mlnueb"] = [ [self.ml_Es[i], self.ml_nue_bevents[i]] for i in range(len(self.ml_nue_bevents))]
       data["ml_likelihood"] = self.ml_lh
+      data["ml_walker_pos"] = [[[self.ml_walker_pos[i][1], self.ml_walker_pos[i][0]] for i in range(len(self.ml_walker_pos))],[[self.ml_walker_pos[i][2], self.ml_walker_pos[i][0]] for i in range(len(self.ml_walker_pos))],[[self.ml_walker_pos[i][2], self.ml_walker_pos[i][1]] for i in range(len(self.ml_walker_pos))]]
 
     data["osc_probs"]["numu"] = [ [Es[i], mu_osc_probs[i]] for i in range(len(Es))]
     data["osc_probs"]["nue"] = [ [Es[i], e_osc_probs[i]] for i in range(len(Es))]
@@ -354,6 +409,7 @@ class InputProcessor:
     data["osc_probs"]["likelihood"] = self.calc_lh_disp(e_osc_events, self.true_e_events_disp)
     data["osc_probs"]["score_likelihood"] = round((self.calc_lh_disp(mu_osc_events, self.true_mu_events) + self.calc_lh_disp(e_osc_events, self.true_e_events) + self.calc_lh_disp(e_bosc_events, self.true_e_bevents))/3)
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
+    
 
     self.previous_hist = data["hist"]
     self.previous_noise = data["noise"]
