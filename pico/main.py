@@ -55,7 +55,7 @@ while True:
     for i in range(1000):
      distances.append(distance_pin.read_u16() >>6)
     distance = sum(distances)/ len(distances)
-    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "hist": bool(hist_pin.value()), "noise":bool(noise_pin.value()), "start_ml":bool(ml_pin.value()), "slow_load":bool(slow_load_pin.value()), "L_km": distance}))
+    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "ADCStates": [True,True,True,True],"hist": bool(hist_pin.value()), "noise":bool(noise_pin.value()), "start_ml":bool(ml_pin.value()), "slow_load":bool(slow_load_pin.value()), "L_km": distance}))
     tick +=1
     sleep(0.1)
     

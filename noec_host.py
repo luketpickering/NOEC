@@ -9,7 +9,7 @@ from noec_utils import msg_to_obj
 class NOECHost:
   def __init__(self, serial_device, baud=9600):
     self.ser = serial.Serial(serial_device, baud)
-    self.previous = json.loads('{"cmd": "UPDATE", "tick": 0, "states": [0,0,0,0,0], "ADCs": [0,0,0,0], "noise": false, "hist":false, "start_ml":false, "slow_load":false, "L_km":1300}')
+    self.previous = json.loads('{"cmd": "UPDATE", "tick": 0, "states": [0,0,0,0,0], "ADCs": [0,0,0,0], "ADCStates":[true,true,true,true], "noise": false, "hist":false, "start_ml":false, "slow_load":false, "L_km":1300}')
 
   def read_message(self):
     obj = self.ser.readline()[2:-3]

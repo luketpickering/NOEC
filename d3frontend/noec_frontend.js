@@ -1042,7 +1042,8 @@ websocket.onmessage = ({data}) => {
     hist = obj.hist
     ml = obj.start_ml
     slow_load = obj.slow_load
-    ui_els.traces.forEach( (m, i) => { m.update(obj.vals[m.param_i]); } );
+    console.log(obj.ADCStates);
+    ui_els.traces.forEach( (m, i) => { if (obj.ADCStates[i] == true){ $("#trace-"+i).show();m.update(obj.vals[m.param_i]);} else{$("#trace-"+i).hide();} } );
     ui_els.lh_trace.update(obj.osc_probs.likelihood);
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);

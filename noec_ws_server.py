@@ -58,7 +58,7 @@ class InputProcessor:
     self.noise = [[random.uniform(0.9,1.1) for i in range(self.true_bin_num)] for i in range(3)]
     self.calc_true_events()
     self.true_Es_disp, self.true_mu_events_disp, self.true_e_events_disp, self.true_e_bevents_disp = self.true_Es, self.true_mu_events, self.true_e_events, self.true_e_bevents
-
+    
     self.ml_numu_events = [0 for i in range(self.true_bin_num)]
     self.ml_nue_events = [0 for i in range(self.true_bin_num)]
     self.ml_nue_bevents = [0 for i in range(self.true_bin_num)]
@@ -194,18 +194,6 @@ class InputProcessor:
         iters_without_hit = 0
       time.sleep(0.1)
     self.set_true_disp(noise)
-    
-
-  def Pearson_N2LLH(self,data_hist, predicted_hist):
-    return np.sum(np.power(predicted_hist - data_hist,2)/data_hist)
-
-  def ml_probs_func_sp(self,Es, a, b,c,d):
-    mapped_vals = []
-    for i, v in enumerate([a,b,c,d]):
-      if i < len(self.param_maps):
-       mapped_vals.append(self.param_maps[i](v))
-    Es, mu_osc_probs,e_osc_probs,e_bosc_probs  = self.calc_events(mapped_vals,self.length,  self.true_bin_num)
-    return e_osc_probs
 
   def ml_probs_func_display(self,a):
     mapped_vals = []
@@ -214,17 +202,6 @@ class InputProcessor:
         mapped_vals.append(self.param_maps[i](v))
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_events(mapped_vals,self.length, self.true_bin_num)
     return Es, mu_osc_probs, e_osc_probs,e_bosc_probs
-
-  def ml_fit_to_true_sp(self,time_iter=1, noise = False):
-    fitting_Es = copy.deepcopy(self.true_Es_disp)
-    fitting_e_probs = copy.deepcopy(self.true_e_events_disp)
-    intermediate_params = []
-    p0 = [random.randint(0,1044) for i in range(4)]
-    params, cov = optimize.curve_fit(self.ml_probs_func, fitting_Es,fitting_e_probs, p0,method="trf", callback=(lambda x: intermediate_params.append(x)))
-    for i in intermediate_params:
-      self.ml_lh = self.calc_lh_disp(self.ml_probs_func(fitting_Es,*i), fitting_e_probs)
-      self.ml_Es, self.ml_nue_events = self.ml_probs_func_display(*i)
-      time.sleep(time_iter)
 
   def mcmc_take_step(self,current, prob_func):
     step = [ np.random.normal(c, 100) for c in current]
@@ -343,10 +320,14 @@ class InputProcessor:
     #print(data)
     data["vals"] = []
     data['hist'] = True
+    data["ADCStates"] = [True,False,True,True]
     #print(data["ADCs"])
     for i, v in enumerate(data["ADCs"]):
       if i < len(self.param_maps):
-        data["vals"].append(self.param_maps[i](v))
+        if data["ADCStates"][i]:
+          data["vals"].append(self.param_maps[i](v))
+        else:
+          data["vals"].append(self.true_vals_mapped[i])
     #print(data["vals"])
     data["L_km"] = self.length
     data["start_ml"] =True

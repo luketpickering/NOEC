@@ -30,6 +30,7 @@ noec:
         osc_probability: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
         osc_events: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
         two_d_likelihood: { w: 100, h: 100, ml: 40, mt: 20, mr: 0, mb: 40, nyticks: 5, nxticks: 5 }
+        ml_walker: { w: 100, h: 100, ml: 40, mt: 20, mr: 0, mb: 40, nyticks: 5, nxticks: 5 }
       line: { w: 4 }
       labels:
         - { text: "Oscillations"}
@@ -54,6 +55,11 @@ noec:
       flvtriangles:
         - {  }
       two_d_likelihood:
+      - { title: "", ylabel: "Dm32", xlabel: "Th32",  xrange: [35, 55], yrange: [2.2, 2.6], parameters: ["Dm32", "Th23"] }
+      - { title: "", ylabel: "Dm32", xlabel: "dcp",  xrange: [-1, 1], yrange: [2.2, 2.6], parameters: ["Dm32", "dcp"] }
+      - { title: "", ylabel: "Th23", xlabel: "dcp",  xrange: [-1, 1], yrange: [35, 55], parameters: ["Th23", "dcp"] }
+
+      ml_walker:
       - { title: "", ylabel: "Dm32", xlabel: "Th32",  xrange: [35, 55], yrange: [2.2, 2.6], parameters: ["Dm32", "Th23"] }
       - { title: "", ylabel: "Dm32", xlabel: "dcp",  xrange: [-1, 1], yrange: [2.2, 2.6], parameters: ["Dm32", "dcp"] }
       - { title: "", ylabel: "Th23", xlabel: "dcp",  xrange: [-1, 1], yrange: [35, 55], parameters: ["Th23", "dcp"] }
