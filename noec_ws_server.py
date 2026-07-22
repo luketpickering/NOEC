@@ -228,19 +228,15 @@ class InputProcessor:
 
   def mcmc_take_step(self,current, prob_func):
     step = [ np.random.normal(c, 100) for c in current]
-    print("current",prob_func(current))
-    print("step", prob_func(step))
     if prob_func(step) > prob_func(current):
-        print("stepped - better ll")
         return step
+    elif prob_func(step) == -np.inf:
+      return current
     else:
-        accept_threshold = prob_func(step)/prob_func(current)
-        print("accept_threshold", accept_threshold)
+        accept_threshold = prob_func(current)/prob_func(step)
         if np.random.rand() < accept_threshold:
-            print("stepped - accept threshold")
             return step
         else:
-            print("stayed")
             return current
 
   def log_uniform_prior(self,params):
@@ -252,10 +248,11 @@ class InputProcessor:
   def ml_mcmc(self, time_iter=0.1, noise=False, num_walkers = 10):
      time.sleep(2)
      fitting_Es = copy.deepcopy(self.true_Es_disp)
-     poster_func =  lambda x: self.calc_lh_disp(self.ml_probs_func_display(x),self.true_e_events_disp) + self.log_uniform_prior(x)
+     poster_func =  lambda x: -self.calculate_likelihood(self.ml_probs_func_display(x)[2],self.true_e_events_disp) + self.log_uniform_prior(x)
      vals = [[[random.randint(0,1024) for _ in range(3)]] for j in range(num_walkers)]
      posts = [0 for i in range(num_walkers)]
-     for i in range(10000):
+     avg_lh = 0
+     while avg_lh < 60 and self.ml_lh < 98:
        for j in range(num_walkers):
          posts[j] = poster_func(vals[j][-1])
          vals[j].append(self.mcmc_take_step(vals[j][-1], poster_func))
@@ -265,10 +262,9 @@ class InputProcessor:
            if ii < len(self.param_maps):
              self.ml_walker_pos[j][ii] =self.param_maps[ii](v)
        best_walk = posts.index(max(posts))
-       print(best_walk)
-       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevent = self.ml_probs_func_display(vals[best_walk][i])
-       self.ml_lh = self.ml_lh_disp(vals[best_walk][i])
-       print("i",i)
+       avg_lh = np.sum([self.ml_lh_disp(vals[i][-1]) for i in range(num_walkers)])/num_walkers
+       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevent = self.ml_probs_func_display(vals[best_walk][-1])
+       self.ml_lh = self.ml_lh_disp(vals[best_walk][-1])
        time.sleep(time_iter)
      
 

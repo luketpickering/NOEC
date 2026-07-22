@@ -206,10 +206,11 @@ const add_two_d_lh = (parent_el, lh_data) => {
           .attr("cy", y(0))  
                 .attr("fill", "black"));
   }
+  console.log(points)
   const add_point = () => {
     let numPoints = data.slice(-1000).length
     data.slice(-1000).forEach((m, i) => {
-      points[i].attr("r", 1)
+      points[i].attr("r", 2)
           .attr("cx",x(m[0]))
           .attr("cy", y(m[1]))  
         .attr("fill", lh_color(m[2]/100))
@@ -220,6 +221,92 @@ const add_two_d_lh = (parent_el, lh_data) => {
   return {el:el, update: (d) => {
     data.push(d);
     add_point();
+  }}
+  
+}
+
+const add_ml_walker = (parent_el, walker_data) => {
+  const pd = walker_data.plot_dims;
+
+  const i = walker_data.lh_i;
+  const lpos = walker_data.x_start + i*(pd.w + pd.ml + pd.mb);
+  const tpos = walker_data.y_start;
+  const num_walkers = walker_data.num_walkers;
+
+  const el = parent_el.append("g")
+                      .attr("transform", `translate(${lpos},${tpos})`)
+                      .attr("class", walker_data.cls)
+        .attr("id", walker_data.cls + `-${i}`);
+
+  // Declare the x (horizontal position) scale.
+  const x = d3.scaleLinear()
+      .domain(walker_data.xrange)
+      .range([0, pd.w]);
+
+  // Declare the y (vertical position) scale.
+  const y = d3.scaleLinear()
+      .domain(walker_data.yrange)
+      .range([pd.h, 0]);
+
+  const xax = el.append("g")
+      .attr("class", walker_data.axiscls + "axis")
+      .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
+      .call(d3.axisBottom(x).ticks(pd.nxticks))
+
+  xax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${pd.w*0.5}, ${pd.mb*0.75})`)
+       .text(`${walker_data.xlabel}`);
+
+  // Add the y-axis.
+  const yax = el.append("g")
+      .attr("class", walker_data.axiscls + "axis")
+      .attr("transform", `translate(${pd.ml},${pd.mt})`)
+      .call(d3.axisLeft(y).ticks(pd.nyticks))
+
+  yax.append("text")
+       .attr("text-anchor", "middle")
+       .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
+    .text(`${walker_data.ylabel}`);
+
+  const data = [];
+  const points = [];
+  for (let k=0;k<10; k++){
+    data.push([]);
+  }
+  
+  const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
+  for (let j =0; j<walker_data.num_walkers; j++){
+    let point = 0;
+    let walker = [];
+    for (let i =0; i<500; i++) {
+      walker.push(pg.append("circle")
+                  .attr("r", 3)
+                  .attr("cx",x(0))
+                  .attr("cy", y(0))  
+                  .attr("fill", "black"));
+    }
+    points.push(walker);
+  }
+  console.log("data");
+  console.log(data);
+  console.log(points);
+  const add_point = () => {
+    for(let j=0; j <num_walkers;j++){
+      let numPoints = data[j].slice(-500).length
+      data[j].slice(-500).forEach((m, i) => {
+        points[j][i].attr("r", 1.5)
+          .attr("cx",x(m[0]))
+          .attr("cy", y(m[1]))  
+          .attr("fill", "red")
+          .attr("fill-opacity", (i+1)/numPoints*100)
+          .attr("class","")
+    })
+    }
+  };
+  return {el:el, update: (d) => {
+    d.forEach((m,i) => {data[i].push(m);})
+     add_point();
   }}
   
 }
@@ -777,13 +864,34 @@ const build_ui = (cfg) => {
   });
   console.log(ml_text_elements)
 
+  const ml_walkers = []
+
+  cfg.ui.plots.ml_walker.forEach((m, i) => {
+  ml_walkers.push(add_ml_walker(svg, {lh_i: ml_walkers.length,
+                                    ylabel: m.ylabel,
+                                    xlabel: m.xlabel,
+                                      xrange: m.xrange,
+                                      yrange: m.yrange,
+                                      x_start : 1000,
+                                      y_start: hline_height +150,
+                                      num_walkers:10,
+					    plot_dims: scaff.plots.ml_walker,
+					    title:m.title,
+					    cls:"ml_prob",
+					    axiscls:"ml_",
+					    interpolate_between:false}));
+
+  });
+
   
   hline_height += 26;
 
   draw_line(scaff_el, {ends:[[500, hline_height], [page_w,hline_height]], lw:4},"ml_scaffolding");
 
 
-  draw_line(scaff_el, {ends:[[500, hline_height  +scaff.plots.osc_probability.h+100], [page_w,hline_height +scaff.plots.osc_probability.h+100]], lw:4},"ml_scaffolding");
+  draw_line(scaff_el, {ends:[[500, hline_height  +scaff.plots.osc_probability.h+150], [page_w,hline_height +scaff.plots.osc_probability.h+150]], lw:4},"ml_scaffolding");
+
+  
   const flvtriangles = [];
   cfg.ui.plots.flvtriangles.forEach((m, i) => {
     flvtriangles.push(add_3flavor_triangle(svg, {flvtri_i: flvtriangles.length,
@@ -828,6 +936,7 @@ const build_ui = (cfg) => {
 	   lh_trace:lh_trace,
 	   bulbs:bulbs,
            two_d_lhs: two_d_lhs,
+           ml_walkers: ml_walkers,
 	 };
 }
 //Build UI ends here
@@ -967,6 +1076,11 @@ websocket.onmessage = ({data}) => {
       ui_els.ml_text_elements[0].update(obj.ml_status);
       ui_els.ml_text_elements[1].update(obj.ml_likelihood);
       ui_els.ml_lh_trace.update(obj.ml_likelihood);
+      if (obj.ml_mode == "MCMC"){
+        ui_els.ml_walkers[0].update(obj.ml_walker_pos[0]);
+        ui_els.ml_walkers[1].update(obj.ml_walker_pos[1]);
+        ui_els.ml_walkers[2].update(obj.ml_walker_pos[2]);
+      }
     }
     else{
       $(".ml_prob").hide();
@@ -980,8 +1094,3 @@ websocket.onmessage = ({data}) => {
     // }
   }
 };
-
-//labels:
-        //- { text: "Oscillations"}
-        //- { text: "Events"}
-        //- { text: "ML"}
