@@ -263,7 +263,7 @@ class InputProcessor:
              self.ml_walker_pos[j][ii] =self.param_maps[ii](v)
        best_walk = posts.index(max(posts))
        avg_lh = np.sum([self.ml_lh_disp(vals[i][-1]) for i in range(num_walkers)])/num_walkers
-       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevent = self.ml_probs_func_display(vals[best_walk][-1])
+       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(vals[best_walk][-1])
        self.ml_lh = self.ml_lh_disp(vals[best_walk][-1])
        time.sleep(time_iter)
      
