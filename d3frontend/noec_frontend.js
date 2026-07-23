@@ -111,7 +111,7 @@ const add_legend_continuous = (parent_el, labels,pos_data, interp, cls="") => {
   }
   
   const el = parent_el.append("g").attr("id", `legend-${i}`).attr("transform", `translate(${pos_data.x},${pos_data.y}),rotate(${pos_data.rot})`)
-  let rect = draw_rect(el,{ x:0, y:0, w:w, h:15}, "leg_cont_box");
+  let rect = draw_rect(el,{ x:0, y:0, w:w, h:15},cls + " leg_cont_box");
   rect.attr("stroke", `url(#linear-grad-${i})`)
     .attr("stroke-width", 2);
   draw_text(el, {x:0, y: 30, text:labels[0]},cls+ "legend scale_left");
@@ -198,7 +198,7 @@ const add_param_trace = (parent_el, trace_data) => {
   }};
 }
 
-const add_param_map = (parent_el, param_data) => {
+const add_param_map = (parent_el, param_data,) => {
   const pd = param_data.plot_dims;
 
   const i = param_data.lh_i;
@@ -265,7 +265,7 @@ const add_two_d_lh = (parent_el, lh_data) => {
   const add_point = () => {
     let numPoints = data.slice(-1000).length
     data.slice(-1000).forEach((m, i) => {
-      points[i].attr("r", 2)
+      points[i].attr("r", 2.5)
           .attr("cx",x(m[0]))
           .attr("cy", y(m[1]))  
         .attr("fill", lh_color(m[2]/100))
@@ -314,7 +314,7 @@ const add_ml_walker = (parent_el, walker_data) => {
     for(let j=0; j <num_walkers;j++){
       let numPoints = data[j].slice(-500).length;
       data[j].slice(-500).forEach((m, i) => {
-        points[j][i].attr("r", 1.5)
+        points[j][i].attr("r", 2.5)
           .attr("cx",x(m[0]))
           .attr("cy", y(m[1]))  
           .attr("fill", walker_color((i+1)/numPoints))
@@ -842,9 +842,9 @@ const build_ui = (cfg) => {
 
   add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"You", color:"#00ff00"},{text:"AI", color:"#ff0000"}], {x:1500, y:hline_height + 200, w:200, i:0, rot:270});
   add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"AI", color:"#b0009e"}], {x:455, y:625, w:200, i:0, rot:270}, "ml_");
-  add_legend_continuous(svg,["0%", "100%"], {x:550, y:1025, w:200, i:0, rot:270},d3.interpolateHsl("red", "lime") )
-
-  add_legend_continuous(svg,["Old", "New"], {x:1030, y:700, w:200, i:1, rot:270},d3.interpolateLab("blue", "red"), "ml_")
+  add_legend_continuous(svg,["0%", "100%"], {x:1600, y:20, w:200, i:0, rot:0},d3.interpolateHsl("red", "lime") )
+  add_legend_continuous(svg,["0%", "100%"], {x:1300, y:425, w:200, i:1, rot:0},d3.interpolateHsl("red", "lime"), "grad_desc_param  ml_")
+  add_legend_continuous(svg,["Old", "New"], {x:1300, y:425, w:200, i:2, rot:0},d3.interpolateLab("blue", "red"), "walker_param  ml_")
 
   const osc_events = [];
   cfg.ui.plots.osc_events.forEach((m, i) => {
@@ -897,12 +897,12 @@ const build_ui = (cfg) => {
                                         yrange: cfg.controls.likelihood[1].range,
                                         x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml,
                                         y_start: hline_height +60,
-                                        plot_dims: scaff.plots.trace,
+                                        plot_dims: scaff.plots.ml_trace,
 					cls: "ml_"});
 
   const ml_text_elements = [];
   cfg.ui.ml_status.forEach((m, i) => {
-    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 0 +200*i, y: hline_height + 40}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
+    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 0 +200*i, y: hline_height + 20}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
   });
 
 
@@ -914,8 +914,8 @@ const build_ui = (cfg) => {
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml,
-                                      y_start: hline_height +150,
+                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml + scaff.plots.ml_trace.w + 50,
+                                      y_start: hline_height +50,
                                       num_walkers:10,
 					    plot_dims: scaff.plots.ml_walker,
 					    title:m.title,
@@ -933,8 +933,8 @@ const build_ui = (cfg) => {
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml,
-                                      y_start: hline_height +150,
+                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml + scaff.plots.ml_trace.w + 50,
+                                      y_start: hline_height +50,
                                       num_walkers:10,
 					    plot_dims: scaff.plots.ml_walker,
 					    title:m.title,
@@ -952,18 +952,18 @@ const build_ui = (cfg) => {
 
   hline_height += scaff.plots.flvtriangles.w +100;
 
-  draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"scaffolding");
+  
 
   const two_d_lhs = [];
   
   cfg.ui.plots.two_d_likelihood.forEach((m, i) => {
-  two_d_lhs.push(add_two_d_lh(svg, {lh_i: two_d_lhs.length,
+  two_d_lhs.push(add_two_d_lh(svg, {lh_i: 0,
                                     ylabel: m.ylabel,
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : 0,
-                                      y_start: hline_height,
+                                      x_start : 1550,
+                                    y_start: 50 + (scaff.plots.two_d_likelihood.h + 50)*i,
 					    plot_dims: scaff.plots.two_d_likelihood,
 					    title:m.title,
 					    cls:"prob",
