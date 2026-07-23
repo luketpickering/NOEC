@@ -229,7 +229,8 @@ class InputProcessor:
      vals = [[[random.randint(0,1024) for _ in range(3)]] for j in range(num_walkers)]
      posts = [0 for i in range(num_walkers)]
      avg_lh = 0
-     while avg_lh < 60 and self.ml_lh < 98:
+     while avg_lh < 85  or  self.ml_lh < 98:
+       print(avg_lh)
        for j in range(num_walkers):
          posts[j] = poster_func(vals[j][-1])
          vals[j].append(self.mcmc_take_step(vals[j][-1], poster_func))
@@ -240,6 +241,7 @@ class InputProcessor:
              self.ml_walker_pos[j][ii] =self.param_maps[ii](v)
        best_walk = posts.index(max(posts))
        avg_lh = np.sum([self.ml_lh_disp(vals[i][-1]) for i in range(num_walkers)])/num_walkers
+       print(avg_lh)
        self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(vals[best_walk][-1])
        self.ml_lh = self.ml_lh_disp(vals[best_walk][-1])
        time.sleep(time_iter)
@@ -350,7 +352,7 @@ class InputProcessor:
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['noise'],))
         self.load_thread.start()
-    data["ml_mode"] = "" 
+    data["ml_mode"] = "MCMC" 
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):
