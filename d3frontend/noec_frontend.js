@@ -152,48 +152,58 @@ const add_param_trace = (parent_el, trace_data) => {
   }};
 }
 
-const add_two_d_lh = (parent_el, lh_data) => {
-  const pd = lh_data.plot_dims;
+const add_param_map = (parent_el, param_data) => {
+  const pd = param_data.plot_dims;
 
-  const i = lh_data.lh_i;
-  const lpos = lh_data.x_start + i*(pd.w + pd.ml + pd.mb);
-  const tpos = lh_data.y_start;
+  const i = param_data.lh_i;
+  const lpos = param_data.x_start + i*(pd.w + pd.ml + pd.mb);
+  const tpos = param_data.y_start;
 
   const el = parent_el.append("g")
                       .attr("transform", `translate(${lpos},${tpos})`)
-                      .attr("class", lh_data.cls)
-        .attr("id", lh_data.cls + `-${i}`);
+                      .attr("class", param_data.cls)
+        .attr("id", param_data.cls + `-${i}`);
 
   // Declare the x (horizontal position) scale.
   const x = d3.scaleLinear()
-      .domain(lh_data.xrange)
+      .domain(param_data.xrange)
       .range([0, pd.w]);
 
   // Declare the y (vertical position) scale.
   const y = d3.scaleLinear()
-      .domain(lh_data.yrange)
+      .domain(param_data.yrange)
       .range([pd.h, 0]);
 
   const xax = el.append("g")
-      .attr("class", lh_data.axiscls + "axis")
+      .attr("class", param_data.axiscls + "axis")
       .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
       .call(d3.axisBottom(x).ticks(pd.nxticks))
 
   xax.append("text")
        .attr("text-anchor", "middle")
        .attr("transform", `translate(${pd.w*0.5}, ${pd.mb*0.75})`)
-       .text(`${lh_data.xlabel}`);
+       .text(`${param_data.xlabel}`);
 
   // Add the y-axis.
   const yax = el.append("g")
-      .attr("class", lh_data.axiscls + "axis")
+      .attr("class", param_data.axiscls + "axis")
       .attr("transform", `translate(${pd.ml},${pd.mt})`)
       .call(d3.axisLeft(y).ticks(pd.nyticks))
 
   yax.append("text")
        .attr("text-anchor", "middle")
        .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
-    .text(`${lh_data.ylabel}`);
+    .text(`${param_data.ylabel}`);
+
+  return {el:el, pd:pd, x:x, y:y};
+}
+
+const add_two_d_lh = (parent_el, lh_data) => {
+  const plot = add_param_map(parent_el, lh_data);
+  const el = plot.el;
+  const pd = plot.pd
+  const x = plot.x;
+  const y = plot.y;
 
   const lh_color = d3.interpolateHsl("red", "lime") 
   const data = [];
@@ -214,7 +224,7 @@ const add_two_d_lh = (parent_el, lh_data) => {
           .attr("cx",x(m[0]))
           .attr("cy", y(m[1]))  
         .attr("fill", lh_color(m[2]/100))
-        .attr("fill-opacity", (i+1)/numPoints*100)
+        .attr("fill-opacity", (i+1)/numPoints)
         .attr("class","")
     })
   };
@@ -226,48 +236,12 @@ const add_two_d_lh = (parent_el, lh_data) => {
 }
 
 const add_ml_walker = (parent_el, walker_data) => {
-  const pd = walker_data.plot_dims;
-
-  const i = walker_data.lh_i;
-  const lpos = walker_data.x_start + i*(pd.w + pd.ml + pd.mb);
-  const tpos = walker_data.y_start;
   const num_walkers = walker_data.num_walkers;
-
-  const el = parent_el.append("g")
-                      .attr("transform", `translate(${lpos},${tpos})`)
-                      .attr("class", walker_data.cls + " walker-param")
-        .attr("id", "walker-param-map" + `-${i}`);
-
-  // Declare the x (horizontal position) scale.
-  const x = d3.scaleLinear()
-      .domain(walker_data.xrange)
-      .range([0, pd.w]);
-
-  // Declare the y (vertical position) scale.
-  const y = d3.scaleLinear()
-      .domain(walker_data.yrange)
-      .range([pd.h, 0]);
-
-  const xax = el.append("g")
-      .attr("class", walker_data.axiscls + "axis")
-      .attr("transform", `translate(${pd.ml},${pd.h+pd.mt})`)
-      .call(d3.axisBottom(x).ticks(pd.nxticks))
-
-  xax.append("text")
-       .attr("text-anchor", "middle")
-       .attr("transform", `translate(${pd.w*0.5}, ${pd.mb*0.75})`)
-       .text(`${walker_data.xlabel}`);
-
-  // Add the y-axis.
-  const yax = el.append("g")
-      .attr("class", walker_data.axiscls + "axis")
-      .attr("transform", `translate(${pd.ml},${pd.mt})`)
-      .call(d3.axisLeft(y).ticks(pd.nyticks))
-
-  yax.append("text")
-       .attr("text-anchor", "middle")
-       .attr("transform", `translate(${-pd.ml*0.75}, ${pd.h*0.5}),rotate(270)`)
-    .text(`${walker_data.ylabel}`);
+  const plot = add_param_map(parent_el, walker_data);
+  const el = plot.el;
+  const pd = plot.pd
+  const x = plot.x;
+  const y = plot.y;
 
   const data = [];
   const points = [];
@@ -284,7 +258,8 @@ const add_ml_walker = (parent_el, walker_data) => {
                   .attr("r", 3)
                   .attr("cx",x(0))
                   .attr("cy", y(0))  
-                  .attr("fill", "black"));
+                  .attr("fill", "black")
+                  .attr("fill-opacity", 0.2));
     }
     points.push(walker);
   }
@@ -299,7 +274,6 @@ const add_ml_walker = (parent_el, walker_data) => {
           .attr("cx",x(m[0]))
           .attr("cy", y(m[1]))  
           .attr("fill", "red")
-          .attr("fill-opacity", (i+1)/numPoints*100)
           .attr("class","")
     })
     }
