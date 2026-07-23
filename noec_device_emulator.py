@@ -17,7 +17,7 @@ def openEmulator():
   return devicefd,clientfd,client_tty
 
 def startEmulator( devicefd,clientfd,client_tty):
-  every_ms = 50.0
+  every_ms = 100.0
   do_update_prob = 100
   update_rate_ADC = 3
 
