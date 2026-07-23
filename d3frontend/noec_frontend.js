@@ -216,7 +216,6 @@ const add_two_d_lh = (parent_el, lh_data) => {
           .attr("cy", y(0))  
                 .attr("fill", "black"));
   }
-  console.log(points)
   const add_point = () => {
     let numPoints = data.slice(-1000).length
     data.slice(-1000).forEach((m, i) => {
@@ -242,13 +241,15 @@ const add_ml_walker = (parent_el, walker_data) => {
   const pd = plot.pd
   const x = plot.x;
   const y = plot.y;
+  
 
+  
   const data = [];
   const points = [];
   for (let k=0;k<10; k++){
     data.push([]);
   }
-  
+  const walker_color = d3.interpolateLab("#0000ff", "#ff0000") 
   const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
   for (let j =0; j<walker_data.num_walkers; j++){
     let point = 0;
@@ -259,22 +260,19 @@ const add_ml_walker = (parent_el, walker_data) => {
                   .attr("cx",x(0))
                   .attr("cy", y(0))  
                   .attr("fill", "black")
-                  .attr("fill-opacity", 0.2));
+                  .attr("fill-opacity", 0.4));
     }
     points.push(walker);
   }
-  console.log("data");
-  console.log(data);
-  console.log(points);
   const add_point = () => {
     for(let j=0; j <num_walkers;j++){
-      let numPoints = data[j].slice(-500).length
+      let numPoints = data[j].slice(-500).length;
       data[j].slice(-500).forEach((m, i) => {
         points[j][i].attr("r", 1.5)
           .attr("cx",x(m[0]))
           .attr("cy", y(m[1]))  
-          .attr("fill", "red")
-          .attr("class","")
+          .attr("fill", walker_color((i+1)/numPoints))
+          .attr("class","");
     })
     }
   };
@@ -283,6 +281,44 @@ const add_ml_walker = (parent_el, walker_data) => {
      add_point();
   }}
   
+}
+
+const add_grad_desc_maps  = (parent_el, grad_desc_data) => {
+  const plot = add_param_map(parent_el, grad_desc_data);
+  const el = plot.el;
+  const pd = plot.pd
+  const x = plot.x;
+  const y = plot.y;
+
+  const lh_color = d3.interpolateHsl("red", "lime"); 
+
+  const data = [];
+  const currentPos = [0,0]
+  const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
+  const marker = pg.append("marker").attr("id","arrow").attr("markerWidth", 5).attr("markerHeight",5);
+  marker.append('path').attr("d","M 0 0 L 10 5 L 0 10 z").attr("fill","context-fill").attr("stroke","context-stroke");
+  const line = pg.append("line").attr("x1",0)
+              .attr("x2",10)
+              .attr("y1",0)
+              .attr("y2",10)
+              .attr("stroke", "red")
+              .attr("stroke-width","3")
+              .attr("marker-end","url(#arrow)");
+
+  const update_line = (d,lh) => {
+    line.attr("x1",x(currentPos[0])).attr("y1",y(currentPos[1])).attr("x2",x(d[0])).attr("y2",y(d[1])).attr("stroke",lh_color(lh/100));
+    currentPos.length = 0;
+    currentPos.push(d[0]);
+    currentPos.push(d[1]);
+    
+  }
+
+  return {el:el, update: (d,lh) => {
+    update_line(d,lh);
+    currentPos.length =0;
+    currentPos.push(d[0]);
+    currentPos.push(d[1]);
+  }};
 }
 
 const add_osc_prob= (parent_el, prob_data) => {
@@ -679,7 +715,10 @@ const build_ui = (cfg) => {
 
   const svg = d3.create("svg")
       .attr("width", page_w)
-      .attr("height", page_h);
+        .attr("height", page_h);
+
+  const marker = svg.append("def").append("marker").attr("id","arrow").attr("markerWidth", 3).attr("markerHeight",3).attr("orient","auto-start-reverse").attr("refX",3).attr("refY",1.5);
+  marker.append('path').attr("d","M 0 0 L 3 1.5 L 0 3 ").attr("fill","none").attr("stroke","context-stroke");
 
   const mode_choices = [];
   cfg.controls.modes.forEach((m, i)=>{
@@ -813,7 +852,7 @@ const build_ui = (cfg) => {
   cfg.ui.ml_status.forEach((m, i) => {
     ml_text_elements.push(draw_updatable_text(top_right_text, {x: 0 +200*i, y: hline_height + 40}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
   });
-  console.log(ml_text_elements)
+
 
   const ml_walkers = []
 
@@ -828,7 +867,26 @@ const build_ui = (cfg) => {
                                       num_walkers:10,
 					    plot_dims: scaff.plots.ml_walker,
 					    title:m.title,
-					    cls:"ml_prob",
+					    cls:"walker_param ml_prob",
+					    axiscls:"ml_",
+					    interpolate_between:false}));
+
+  });
+
+  const ml_grad_disp = []
+
+  cfg.ui.plots.ml_walker.forEach((m, i) => {
+  ml_grad_disp.push(add_grad_desc_maps(svg, {lh_i: ml_grad_disp.length,
+                                    ylabel: m.ylabel,
+                                    xlabel: m.xlabel,
+                                      xrange: m.xrange,
+                                      yrange: m.yrange,
+                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml,
+                                      y_start: hline_height +150,
+                                      num_walkers:10,
+					    plot_dims: scaff.plots.ml_walker,
+					    title:m.title,
+					    cls:"grad_desc_param ml_prob",
 					    axiscls:"ml_",
 					    interpolate_between:false}));
 
@@ -875,6 +933,7 @@ const build_ui = (cfg) => {
 	   bulbs:bulbs,
            two_d_lhs: two_d_lhs,
            ml_walkers: ml_walkers,
+           ml_grad_disp:ml_grad_disp,
 	 };
 }
 //Build UI ends here
@@ -972,7 +1031,6 @@ websocket.onmessage = ({data}) => {
     
      
   } else if(obj.cmd == "UPDATE"){
-    console.log(obj)
     //console.log(obj.osc_probs.numu)
     likelihood = obj.osc_probs.likelihood
     score_likelihood = obj.osc_probs.score_likelihood
@@ -980,7 +1038,6 @@ websocket.onmessage = ({data}) => {
     hist = obj.hist
     ml = obj.start_ml
     slow_load = obj.slow_load
-    console.log(obj.ADCStates);
     ui_els.traces.forEach( (m, i) => { if (obj.ADCStates[i] == true){ $("#trace-"+i).show();m.update(obj.vals[m.param_i]);} else{$("#trace-"+i).hide();} } );
     ui_els.lh_trace.update(obj.osc_probs.likelihood);
     ui_els.text_elements[0].update(obj.tick);
@@ -1008,18 +1065,22 @@ websocket.onmessage = ({data}) => {
       $(".ml_trace").show();
       $(".ml_scaffolding").show()
       ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_events.nue_true,false,true);
-      console.log(ui_els.ml_text_elements[0])
       ui_els.ml_text_elements[0].update(obj.ml_status);
       ui_els.ml_text_elements[1].update(obj.ml_likelihood);
       ui_els.ml_lh_trace.update(obj.ml_likelihood);
       if (obj.ml_mode == "MCMC"){
-        $(".walker-param").show();
+        $(".grad_desc_param").hide();
+        $(".walker_param").show();
         ui_els.ml_walkers[0].update(obj.ml_walker_pos[0]);
         ui_els.ml_walkers[1].update(obj.ml_walker_pos[1]);
         ui_els.ml_walkers[2].update(obj.ml_walker_pos[2]);
       }
       else{
-        $(".walker-param").hide();
+        $(".grad_desc_param").show();
+        $(".walker_param").hide();
+        ui_els.ml_grad_disp[0].update([obj.ml_grad_desc_vals[1], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
+        ui_els.ml_grad_disp[1].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
+        ui_els.ml_grad_disp[2].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[1]], obj.ml_likelihood);
       }
       
     }

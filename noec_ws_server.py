@@ -65,6 +65,7 @@ class InputProcessor:
     self.ml_Es= np.linspace(0.5,6.4,self.true_bin_num)
     self.ml_lh = 0
     self.ml_walker_pos = [[0,0,0] for _ in range(10)]
+    self.ml_grad_desc_vals = [0,0,0]
 
   def calc_true_events(self):
     self.true_Es, self.true_mu_events, self.true_e_events, self.true_e_bevents = self.calc_events(self.true_vals_mapped,self.length, self.true_bin_num)
@@ -173,7 +174,6 @@ class InputProcessor:
        self.true_e_bevents_disp[i] = 0.0000000001
     iters_without_hit = 0
     while iters_without_hit <250:
-      print(iters_without_hit)
       particle = random.randint(0,2)
       bin = random.randint(0,len(self.true_mu_events_disp)-1)
       if particle == 0:
@@ -251,7 +251,6 @@ class InputProcessor:
     currentVals = [random.randint(0,1024) for i in range(4)]
     learning_step = 10000
     steps = 0
-    print("likelihood",self.ml_lh)
     while self.ml_lh <100 or (steps <500 and self.ml_lh<95):
       time.sleep(time_iter)
       if steps >600 :
@@ -267,6 +266,7 @@ class InputProcessor:
       steps += 1
       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(currentVals)
       self.ml_lh = self.ml_lh_disp(currentVals)
+      self.ml_grad_desc_vals = currentVals
       
       
       
@@ -292,7 +292,6 @@ class InputProcessor:
 
   def get_gradient(self,cost_func, vals, h=1e-7):
     gradients = []
-    print(vals)
     for i in range(len(vals)):
         lowerGrad = vals.copy()
         lowerGrad[i] -= h
@@ -313,7 +312,6 @@ class InputProcessor:
       self.true_mu_events_disp, self.true_e_events_disp, self.true_e_bevents_disp = self.true_mu_events, self.true_e_events, self.true_e_bevents
 
   def process(self, data):
-    print(abs(self.length-round(data['L_km']/1023*2000)))
     if (abs(self.length-round(data['L_km']/1023*2000)) > 20):
       self.length = round(data['L_km']/1023*2000)
     self.calc_true_events()
@@ -352,7 +350,7 @@ class InputProcessor:
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['noise'],))
         self.load_thread.start()
-    data["ml_mode"] = "MCMC" 
+    data["ml_mode"] = "" 
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):
@@ -386,6 +384,11 @@ class InputProcessor:
     data["osc_probs"]["likelihood"] = self.calc_lh_disp(e_osc_events, self.true_e_events_disp)
     data["osc_probs"]["score_likelihood"] = round((self.calc_lh_disp(mu_osc_events, self.true_mu_events) + self.calc_lh_disp(e_osc_events, self.true_e_events) + self.calc_lh_disp(e_bosc_events, self.true_e_bevents))/3)
     data["trans_prob_max"] = self.calc_state_probs(int(data["tick"]), data["vals"], data["L_km"])
+
+    data["ml_grad_desc_vals"] = []
+    for i, v in enumerate(self.ml_grad_desc_vals):
+      if i < len(self.param_maps):
+          data["ml_grad_desc_vals"].append(self.param_maps[i](v))
     
 
     self.previous_hist = data["hist"]
