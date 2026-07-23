@@ -76,6 +76,52 @@ const add_mode_choice = (parent_el, mode_choice_data) => {
   return { el:el, re: (i+1)*(w+lw) };
 }
 
+const add_legend_discrete = (parent_el, labels, pos_data, cls="") => {
+  const i = pos_data.i;
+  const w = pos_data.w;
+  let current_width = 0;
+  const el = parent_el.append("g").attr("id", `legend-${i}`).attr("transform", `translate(${pos_data.x},${pos_data.y}),rotate(${pos_data.rot})`)
+  labels.forEach((m,i) => {
+    let rect = draw_rect(el, {x:current_width, y: -15, w:15, h:15}, "leg_box");
+    rect.attr("stroke", m.color).attr("stroke-width",2).attr("fill", "none");
+    let leg_text = draw_text(el, {x:current_width + 20, y: Math.floor(current_width/w)*20, text:m.text}, cls+ "legend disc");
+    console.log(leg_text);
+    console.log(current_width)
+    current_width += m.text.length*14 +20;
+  })
+}
+
+const add_legend_continuous = (parent_el, labels,pos_data, interp, cls="") => {
+  const colours = [];
+  const i = pos_data.i;
+  const w = pos_data.w;
+  
+  
+  const gradient = parent_el.append("linearGradient")
+        .attr("id", `linear-grad-${i}`);
+        //.attr("x1", "0%")
+        //.attr("y1", "0%")
+        //.attr("y2", "100%");
+
+  for (let j = 0; j<11; j++){
+    gradient.append("stop")
+      .attr("class", "end")
+      .attr("offset", `${j*10}%`)
+      .attr("stop-color",interp(j/10))
+  }
+  
+  const el = parent_el.append("g").attr("id", `legend-${i}`).attr("transform", `translate(${pos_data.x},${pos_data.y}),rotate(${pos_data.rot})`)
+  let rect = draw_rect(el,{ x:0, y:0, w:w, h:15}, "leg_cont_box");
+  rect.attr("stroke", `url(#linear-grad-${i})`)
+    .attr("stroke-width", 2);
+  draw_text(el, {x:0, y: 30, text:labels[0]},cls+ "legend scale_left");
+  draw_text(el, {x:w, y: 30, text:labels[1]}, cls+"legend scale_right");
+
+  return el
+}                
+  
+  
+
 const add_param_trace = (parent_el, trace_data) => {
 
   const pd = trace_data.plot_dims;
@@ -775,7 +821,7 @@ const build_ui = (cfg) => {
                                        plot_dims: scaff.plots.trace,
 				       cls: ""});
 
-
+  
   hline_height += 2 + scaff.plots.trace.mt + scaff.plots.trace.h + scaff.plots.trace.mb;
   draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
   hline_height += 2;
@@ -793,6 +839,12 @@ const build_ui = (cfg) => {
   cfg.controls.status.forEach((m, i) => {
     text_elements.push(draw_updatable_text(top_right_text, {x: 10+ 200*i, y: 10}, (v) => { return (m.label + ` ${v}`); }, "ticker"));
   });
+
+  add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"You", color:"#00ff00"},{text:"AI", color:"#ff0000"}], {x:1500, y:hline_height + 200, w:200, i:0, rot:270});
+  add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"AI", color:"#b0009e"}], {x:455, y:625, w:200, i:0, rot:270}, "ml_");
+  add_legend_continuous(svg,["0%", "100%"], {x:550, y:1025, w:200, i:0, rot:270},d3.interpolateHsl("red", "lime") )
+
+  add_legend_continuous(svg,["Old", "New"], {x:1030, y:700, w:200, i:1, rot:270},d3.interpolateLab("blue", "red"), "ml_")
 
   const osc_events = [];
   cfg.ui.plots.osc_events.forEach((m, i) => {

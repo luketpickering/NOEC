@@ -65,7 +65,7 @@ svg {
 
 .prob-series.nutrue {
   stroke-width: 2;
-  stroke: #0000FF;
+  stroke:#0061fc;
   fill: None;
 }
 
@@ -79,13 +79,13 @@ svg {
 
 .ml_prob-series.nu {
   stroke-width: 2;
-  stroke: #00FFFF;
+  stroke: #b0009e;
   fill: None;
 }
 
 .ml_prob-series.nutrue {
   stroke-width: 2;
-  stroke: #FF00FF;
+  stroke: #0061fc;
   fill: None;
 }
 
@@ -278,5 +278,35 @@ label{
     text-anchor: middle;
     background-color:black;
     color:#00FF00;
+}
+
+.legend{
+    font-family: 'Orbitron', sans-serif;
+    text-anchor: left;
+    background-color:black;
+    color:#00FF00;
+    stroke:#00ff00;
+    fill: #00ff00;
+    font-size:14px;
+}
+
+.ml_legend{
+    font-family: 'Orbitron', sans-serif;
+    text-anchor: left;
+    background-color:black;
+    color:#ff0000;
+    stroke:#ff0000;
+    fill: #ff0000;
+    font-size:14px;
+}
+
+.scale_left{
+    text-anchor: start;
+}
+
+.scale_right{
+    text-anchor:end;
+
+.leg_box{
 }
 
