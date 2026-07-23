@@ -320,7 +320,6 @@ class InputProcessor:
     #print(data)
     data["vals"] = []
     data['hist'] = True
-    data["ADCStates"] = [True,False,True,True]
     #print(data["ADCs"])
     for i, v in enumerate(data["ADCs"]):
       if i < len(self.param_maps):
@@ -352,7 +351,7 @@ class InputProcessor:
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['noise'],))
         self.load_thread.start()
-    data["ml_mode"] = "MCMC" 
+    data["ml_mode"] = "" 
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):
