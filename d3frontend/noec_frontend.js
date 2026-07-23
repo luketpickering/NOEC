@@ -1071,16 +1071,22 @@ websocket.onmessage = ({data}) => {
       if (obj.ml_mode == "MCMC"){
         $(".grad_desc_param").hide();
         $(".walker_param").show();
-        ui_els.ml_walkers[0].update(obj.ml_walker_pos[0]);
-        ui_els.ml_walkers[1].update(obj.ml_walker_pos[1]);
-        ui_els.ml_walkers[2].update(obj.ml_walker_pos[2]);
+        if (ml_status=="In Progress"){
+          ui_els.ml_walkers[0].update(obj.ml_walker_pos[0]);
+          ui_els.ml_walkers[1].update(obj.ml_walker_pos[1]);
+          ui_els.ml_walkers[2].update(obj.ml_walker_pos[2]);
+        }
+        ml_status = obj.ml_status
       }
       else{
         $(".grad_desc_param").show();
         $(".walker_param").hide();
-        ui_els.ml_grad_disp[0].update([obj.ml_grad_desc_vals[1], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
-        ui_els.ml_grad_disp[1].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
-        ui_els.ml_grad_disp[2].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[1]], obj.ml_likelihood);
+        if (ml_status=="In Progress"){
+          ui_els.ml_grad_disp[0].update([obj.ml_grad_desc_vals[1], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
+          ui_els.ml_grad_disp[1].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
+          ui_els.ml_grad_disp[2].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[1]], obj.ml_likelihood);
+        }
+        ml_status = obj.ml_status
       }
       
     }
