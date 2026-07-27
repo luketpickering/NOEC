@@ -230,7 +230,6 @@ class InputProcessor:
      posts = [0 for i in range(num_walkers)]
      avg_lh = 0
      while avg_lh < 85  or  self.ml_lh < 98:
-       print(avg_lh)
        for j in range(num_walkers):
          posts[j] = poster_func(vals[j][-1])
          vals[j].append(self.mcmc_take_step(vals[j][-1], poster_func))
@@ -241,9 +240,8 @@ class InputProcessor:
              self.ml_walker_pos[j][ii] =self.param_maps[ii](v)
        best_walk = posts.index(max(posts))
        avg_lh = np.sum([self.ml_lh_disp(vals[i][-1]) for i in range(num_walkers)])/num_walkers
-       print(avg_lh)
        self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(vals[best_walk][-1])
-       self.ml_lh = self.ml_lh_disp(vals[best_walk][-1])
+       self.ml_lh = round(avg_lh)
        time.sleep(time_iter)
      
 
@@ -330,6 +328,8 @@ class InputProcessor:
     #print(data["vals"])
     data["L_km"] = self.length
     data["start_ml"] =True
+
+    data ["time_sent"] = time.time();
 
     
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_probs(data["vals"], self.length)
