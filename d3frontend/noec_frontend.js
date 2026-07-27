@@ -841,10 +841,9 @@ const build_ui = (cfg) => {
   });
 
   add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"You", color:"#00ff00"},{text:"AI", color:"#ff0000"}], {x:1500, y:hline_height + 200, w:200, i:0, rot:270});
-  add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"AI", color:"#b0009e"}], {x:455, y:625, w:200, i:0, rot:270}, "ml_");
+ 
   add_legend_continuous(svg,["0%", "100%"], {x:1600, y:20, w:200, i:0, rot:0},d3.interpolateHsl("red", "lime") )
-  add_legend_continuous(svg,["0%", "100%"], {x:1300, y:425, w:200, i:1, rot:0},d3.interpolateHsl("red", "lime"), "grad_desc_param  ml_")
-  add_legend_continuous(svg,["Old", "New"], {x:1300, y:425, w:200, i:2, rot:0},d3.interpolateLab("blue", "red"), "walker_param  ml_")
+  
 
   const osc_events = [];
   cfg.ui.plots.osc_events.forEach((m, i) => {
@@ -871,6 +870,9 @@ const build_ui = (cfg) => {
   hline_height += 26;
 
   draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"ml_scaffolding");
+   add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"AI", color:"#b0009e"}], {x:455, y:hline_height +200, w:200, i:0, rot:270}, "ml_");
+  add_legend_continuous(svg,["0%", "100%"], {x:1300, y:hline_height + 20, w:200, i:1, rot:0},d3.interpolateHsl("red", "lime"), "grad_desc_param  ml_")
+  add_legend_continuous(svg,["Old", "New"], {x:1300, y:hline_height + 20, w:200, i:2, rot:0},d3.interpolateLab("blue", "red"), "walker_param  ml_")
 
   
   let ml = cfg.ui.plots.machine_learning[0];

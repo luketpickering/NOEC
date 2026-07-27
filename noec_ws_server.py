@@ -251,7 +251,7 @@ class InputProcessor:
     time.sleep(2)
     fitting_Es = copy.deepcopy(self.true_Es_disp)
     currentVals = [random.randint(0,1024) for i in range(4)]
-    learning_step = 10000
+    learning_step = 1000
     steps = 0
     while self.ml_lh <100 or (steps <500 and self.ml_lh<95):
       time.sleep(time_iter)
@@ -351,7 +351,7 @@ class InputProcessor:
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['noise'],))
         self.load_thread.start()
-    data["ml_mode"] = "" 
+    data["ml_mode"] = "MCMC" 
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):

@@ -24,13 +24,14 @@ noec:
       page: { w: 1512, h: 1300 }
       mode_select: { w: 120, h: 40, fs: 15 }
       plots:
-        trace: { w: 300, h: 50, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
+        trace: { w: 300, h: 150, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
+        ml_trace: { w: 150, h: 150, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         likelihood : {w: 300, h: 50, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         flvtriangles: { w: 300, ml: 50, mt: 35, mr: 5, mb: 40, nticks: 3 }
         osc_probability: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
         osc_events: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
-        two_d_likelihood: { w: 100, h: 100, ml: 40, mt: 20, mr: 0, mb: 40, nyticks: 5, nxticks: 5 }
-        ml_walker: { w: 100, h: 100, ml: 40, mt: 20, mr: 0, mb: 40, nyticks: 5, nxticks: 5 }
+        two_d_likelihood: { w: 200, h: 200, ml: 40, mt: 20, mr: 0, mb: 40, nyticks: 5, nxticks: 5 }
+        ml_walker: { w: 200, h: 200, ml: 40, mt: 20, mr: 0, mb: 40, nyticks: 5, nxticks: 5 }
       line: { w: 4 }
       labels:
         - { text: "Oscillations"}
