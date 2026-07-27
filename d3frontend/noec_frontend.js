@@ -312,8 +312,8 @@ const add_ml_walker = (parent_el, walker_data) => {
   }
   const add_point = () => {
     for(let j=0; j <num_walkers;j++){
-      let numPoints = data[j].slice(-500).length;
-      data[j].slice(-500).forEach((m, i) => {
+      let numPoints = data[j].slice(-100).length;
+      data[j].slice(-100).forEach((m, i) => {
         points[j][i].attr("r", 2.5)
           .attr("cx",x(m[0]))
           .attr("cy", y(m[1]))  
@@ -977,7 +977,8 @@ const build_ui = (cfg) => {
   // Append the SVG element.
   container.append(svg.node());
 
-  return { traces: traces,
+  return {svg:svg,
+    traces: traces,
            text_elements: text_elements,
 	   osc_events: osc_events,
 	   machine_learning:machine_learning,
@@ -1070,21 +1071,25 @@ $(document).on("keypress", function( event ){
   }
 });
 
+
 websocket.onmessage = ({data}) => {
   const obj = JSON.parse(data);
- 
+  console.log((Date.now()/1000) - obj.time_sent)
 
   if (obj.cmd == "ui_start"){
+    window.requestAnimationFrame(create_ui);   
+  } else if(obj.cmd == "UPDATE"){window.requestAnimationFrame(update_ui);}
+
+  function create_ui(){
     console.log("Building UI");
     //console.log(obj);
     ui_els = build_ui(obj.cfg.noec);
     $(".ml_prob").hide();
     $(".ml_trace").hide();
     $(".ml_scaffolding").hide()
-   
-    
-     
-  } else if(obj.cmd == "UPDATE"){
+  }
+
+    function update_ui() {
     //console.log(obj.osc_probs.numu)
     likelihood = obj.osc_probs.likelihood
     score_likelihood = obj.osc_probs.score_likelihood
@@ -1092,6 +1097,7 @@ websocket.onmessage = ({data}) => {
     hist = obj.hist
     ml = obj.start_ml
     slow_load = obj.slow_load
+
     ui_els.traces.forEach( (m, i) => { if (obj.ADCStates[i] == true){ $("#trace-"+i).show();m.update(obj.vals[m.param_i]);} else{$("#trace-"+i).hide();} } );
     ui_els.lh_trace.update(obj.osc_probs.likelihood);
     ui_els.text_elements[0].update(obj.tick);
