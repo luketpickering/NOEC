@@ -811,8 +811,22 @@ const build_ui = (cfg) => {
 
   });
 
+ 
+  const help_tooltips = []
+  cfg.tooltips.forEach((m) => {
+    help_tooltips.push(m);
+    console.log(m.id)
+    console.log($(m.id).prop('nodeName'))
+    $(m.id).tooltip();
+    $(m.id).tooltip("disable");
+    $(m.id).attr('title', m.title);
+  })
+
+  $("#prob-0").attr('background-color', 'deeppink');
+
   // Append the SVG element.
   container.append(svg.node());
+
 
   return { traces: traces,
            text_elements: text_elements,
@@ -825,6 +839,7 @@ const build_ui = (cfg) => {
 	   lh_trace:lh_trace,
 	   bulbs:bulbs,
            two_d_lhs: two_d_lhs,
+           help_tooltips: help_tooltips,
 	 };
 }
 //Build UI ends here
@@ -887,7 +902,7 @@ setInterval(function( event ){
   let noise  = $('input[name=noise]').is(":checked")
   let ml_start = $('input[name=ml_start]').is(":checked")
   let slow_load = $('input[name=slow_load]').is(":checked")
-  $.post("/update_input", {ADCs : [ Dm32,Th23,dcp ], noise:noise, L_km:L_km, ml_start:ml_start, slow_load:slow_load}, function(data, status){ if (status == "success"){update_input(data)}});
+  $.post("/update_input", {ADCs : [ Dm32,Th23,dcp ], noise:noise, L_km:L_km, ml_start:ml_start, slow_load:slow_load, ADCStates:[true,true,true,true]}, function(data, status){ if (status == "success"){update_input(data)}});
 }, 10)
 
 $(document).on("keypress", function( event ){
@@ -923,14 +938,43 @@ $(document).on("keypress", function( event ){
   }
 });
 
- function load_ui(obj){
+$("#help").on("change", help_mode)
+
+function load_ui(obj){
    console.log("Building UI");
     //console.log(obj);
-    ui_els = build_ui(obj.cfg.noec);
+  ui_els = build_ui(obj.cfg.noec);
+  ui_els.help_tooltips.forEach((m) => {
+    console.log(m.id)
+    console.log($(m.id).prop('nodeName'))
+    $(m.id).tooltip();
+    $(m.id).tooltip("disable");
+    $(m.id).attr('title', m.title);
+  })
     $(".ml_prob").hide();
     $(".ml_trace").hide();
    $(".ml_scaffolding").hide()
  }
+
+function help_mode(){
+  console.log("Called")
+  let help = $('input[name=help]').is(":checked");
+  console.log(help)
+  if (help){
+    ui_els.help_tooltips.forEach((m) => {
+      console.log($(m.id).prop('nodeName'))
+      $(m.id).attr('title', m.title);
+      $(m.id).tooltip("enable");
+    })
+  }
+  else{
+    ui_els.help_tooltips.forEach((m) => {
+    $(m.id).prop('title', "");
+    $(m.id).tooltip('disable');
+    })
+  }
+}
+    
 
 
  
@@ -939,15 +983,15 @@ $(document).on("keypress", function( event ){
      
 function update_input(obj){
     tick +=1 
-    console.log(obj.vals);
-    console.log(obj);
+    //console.log(obj.vals);
+    //console.log(obj);
     //console.log(obj.hist)
     //console.log(obj.osc_probs.numu)
-    console.log(ui_els)
+    //console.log(ui_els)
     likelihood = obj.osc_probs.likelihood
     score_likelihood = obj.osc_probs.score_likelihood
-    console.log(score_likelihood)
-    console.log(obj.hist)
+    //console.log(score_likelihood)
+    //console.log(obj.hist)
     noise = obj.noise
     hist = obj.hist
     ml = obj.start_ml
@@ -969,7 +1013,7 @@ function update_input(obj){
     ui_els.bulbs[3].update(slow_load)
     ui_els.two_d_lhs[0].update([obj.vals[1], obj.vals[0], likelihood]);
     ui_els.two_d_lhs[1].update([obj.vals[2], obj.vals[0], likelihood]);
-    ui_els.two_d_lhs[2].update([obj.vals[2], obj.vals[1], likelihood]);
+  ui_els.two_d_lhs[2].update([obj.vals[2], obj.vals[1], likelihood]);
     if (obj.start_ml){
       $(".ml_prob").show();
       $(".ml_trace").show();

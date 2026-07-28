@@ -77,9 +77,7 @@ def update_input():
    global wcInputProcessor
    if request.method == "POST":
       inputDict = dict(request.form.lists())
-      print(inputDict)
-      processDict = { "ADCs": inputDict['ADCs[]'], "noise": inputDict['noise'] == ["true"], 'start_ml': inputDict["ml_start"] == ['true'], 'slow_load':inputDict['slow_load'] == ['true'], "states" :[0,0,0,0,0], "L_km": int(inputDict['L_km'][0]), "tick":0}
-      print(processDict)
+      processDict = { "ADCs": inputDict['ADCs[]'], "noise": inputDict['noise'] == ["true"], 'start_ml': inputDict["ml_start"] == ['true'], 'slow_load':inputDict['slow_load'] == ['true'], "states" :[0,0,0,0,0], "L_km": int(inputDict['L_km'][0]), "tick":0, "ADCStates": [i == 'true' for i in inputDict['ADCStates[]']]}
    return wcInputProcessor.process(processDict)
 
 

@@ -68,7 +68,10 @@ noec:
         - { parameters: ["Dm32", "Th23"] }
     ml_status:
       - { name: "status", label: "status: "}
-      - { name: "likelihood", label: "likelihood [%]: "} 
+      - { name: "likelihood", label: "likelihood [%]: "}
+  tooltips:
+  - {id: "#prob-0", title: "Shows how likely it is to detect a muon neutrino at different energy levels"}
+  - {id: "#ml_prob-1", title: "Shows how likely it is to detect an electron neutrino at different energy levels"}
   input:
     flux:
       numode:
