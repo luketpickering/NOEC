@@ -258,8 +258,8 @@ const add_two_d_lh = (parent_el, lh_data) => {
   for (let i =0; i<1000; i++) {
     points.push(pg.append("circle")
         .attr("r", 1)
-          .attr("cx",x(0))
-          .attr("cy", y(0))  
+          .attr("cx",0)
+          .attr("cy", 0)  
                 .attr("fill", "black"));
   }
   const add_point = () => {
@@ -303,8 +303,8 @@ const add_ml_walker = (parent_el, walker_data) => {
     for (let i =0; i<500; i++) {
       walker.push(pg.append("circle")
                   .attr("r", 3)
-                  .attr("cx",x(0))
-                  .attr("cy", y(0))  
+                  .attr("cx",0)
+                  .attr("cy", 0)  
                   .attr("fill", "black")
                   .attr("fill-opacity", 0.4));
     }
@@ -339,24 +339,31 @@ const add_grad_desc_maps  = (parent_el, grad_desc_data) => {
   const lh_color = d3.interpolateHsl("red", "lime"); 
 
   const data = [];
-  const currentPos = [0,0]
+  const currentPos = [grad_desc_data.xrange[0],grad_desc_data.yrange[0]]
   const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
   const marker = pg.append("marker").attr("id","arrow").attr("markerWidth", 5).attr("markerHeight",5);
   marker.append('path').attr("d","M 0 0 L 10 5 L 0 10 z").attr("fill","context-fill").attr("stroke","context-stroke");
   const line = pg.append("line").attr("x1",0)
-              .attr("x2",10)
+              .attr("x2",0)
               .attr("y1",0)
-              .attr("y2",10)
+              .attr("y2",0)
               .attr("stroke", "red")
               .attr("stroke-width","3")
               .attr("marker-end","url(#arrow)");
 
   const update_line = (d,lh) => {
+    
+      console.log("d");
+      console.log(d);
+      console.log("currentPos");
+    console.log(currentPos);
+
+    if (d[0] != currentPos[0] || d[1] != currentPos[1]){ 
     line.attr("x1",x(currentPos[0])).attr("y1",y(currentPos[1])).attr("x2",x(d[0])).attr("y2",y(d[1])).attr("stroke",lh_color(lh/100));
     currentPos.length = 0;
     currentPos.push(d[0]);
     currentPos.push(d[1]);
-    
+    }
   }
 
   return {el:el, update: (d,lh) => {
@@ -364,7 +371,8 @@ const add_grad_desc_maps  = (parent_el, grad_desc_data) => {
     currentPos.length =0;
     currentPos.push(d[0]);
     currentPos.push(d[1]);
-  }};
+  }, complete: () =>{
+    line.attr("marker-end","url(#end_point)");}};
 }
 
 const add_osc_prob= (parent_el, prob_data) => {
@@ -756,25 +764,38 @@ const build_ui = (cfg) => {
 
   const scaff =  cfg.ui.scaffolding;
 
-  const page_w = scaff.page.w;
-  const page_h = scaff.page.h;
+  const page_w = scaff.page.trace_panel.w;
 
-  const svg = d3.create("svg")
+  const trace_svg = d3.create("svg")
       .attr("width", page_w)
-        .attr("height", page_h);
+        .attr("height", scaff.page.trace_panel.h);
 
-  const marker = svg.append("def").append("marker").attr("id","arrow").attr("markerWidth", 3).attr("markerHeight",3).attr("orient","auto-start-reverse").attr("refX",3).attr("refY",1.5);
+  const event_svg = d3.create("svg")
+      .attr("width", page_w)
+        .attr("height", scaff.page.event_panel.h);
+
+  const ml_svg = d3.create("svg")
+      .attr("width", page_w)
+        .attr("height", scaff.page.ml_panel.h);
+
+  const param_maps_svg = []
+  
+
+  const marker = ml_svg.append("def").append("marker").attr("id","arrow").attr("markerWidth", 3).attr("markerHeight",3).attr("orient","auto-start-reverse").attr("refX",3).attr("refY",1.5);
   marker.append('path').attr("d","M 0 0 L 3 1.5 L 0 3 ").attr("fill","none").attr("stroke","context-stroke");
+
+  const c_marker = ml_svg.append("marker").attr("id","end_point").attr("markerWidth", 5).attr("markerHeight",5).attr("orient","auto-start-reverse").attr("refX",0).attr("refY",0);
+  c_marker.append("circle").attr("cx",2).attr("cy",2).attr("r",1.5).attr("fill", "lime").attr("stroke","context-stroke");
 
   const mode_choices = [];
   cfg.controls.modes.forEach((m, i)=>{
-    mode_choices.push(add_mode_choice(svg, {i: i, label: m.label,
+    mode_choices.push(add_mode_choice(trace_svg, {i: i, label: m.label,
       w: scaff.mode_select.w, h: scaff.mode_select.h, lw: scaff.line.w,
       fs: scaff.mode_select.fs }));
   });
 
 
-  const scaff_el = svg.append("g").attr("class", "scaffolding");
+  const scaff_el = trace_svg.append("g").attr("class", "scaffolding");
 
   
   //scaff.labels.forEach((m,i) =>{
@@ -782,7 +803,7 @@ const build_ui = (cfg) => {
   //})
 
   let hline_height = scaff.mode_select.h + 2;
-  draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
+  draw_line(trace_svg, { ends: [ [0, hline_height], [page_w,hline_height] ], lw:4 }, "scaffolding");
   hline_height += 2;
 
   const traces = [];
@@ -799,7 +820,7 @@ const build_ui = (cfg) => {
     if(param_i == null){
       console.log(`Trace requested for parameter ${m.parameter} that could not be found`);
     } else {
-      traces.push(add_param_trace(svg, {trace_i: traces.length,
+      traces.push(add_param_trace(trace_svg, {trace_i: traces.length,
                                         param_i: param_i,
                                         label: m.parameter,
                                         units: cfg.controls.parameters[param_i].units,
@@ -811,7 +832,7 @@ const build_ui = (cfg) => {
     }
   });
 
-  let lh_trace = add_param_trace(svg, {trace_i: traces.length,
+  let lh_trace = add_param_trace(trace_svg, {trace_i: traces.length,
                                         param_i: 0,
                                         label: cfg.controls.likelihood[0].label,
                                         units: cfg.controls.likelihood[0].units,
@@ -827,12 +848,12 @@ const build_ui = (cfg) => {
   hline_height += 2;
 
   const mode_choice_re = mode_choices[mode_choices.length-1].re;
-  const top_right_text = svg.append("g").attr("transform", `translate(${mode_choice_re}, 10)`);
+  const top_right_text = trace_svg.append("g").attr("transform", `translate(${mode_choice_re}, 10)`);
   const bulbs = [];
   let colours = ["orange", "deeppink","lime", "darkviolet"]
 
   for (let i = 0; i<4; i++){
-    bulbs.push(draw_updateable_circle(svg,{x:1100+i*35, y:15, color:colours[i], r:15}));
+    bulbs.push(draw_updateable_circle(trace_svg,{x:1100+i*35, y:15, color:colours[i], r:15}));
   }
 
   const text_elements = [];
@@ -840,19 +861,28 @@ const build_ui = (cfg) => {
     text_elements.push(draw_updatable_text(top_right_text, {x: 10+ 200*i, y: 10}, (v) => { return (m.label + ` ${v}`); }, "ticker"));
   });
 
-  add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"You", color:"#00ff00"},{text:"AI", color:"#ff0000"}], {x:1500, y:hline_height + 200, w:200, i:0, rot:270});
+  add_legend_discrete(event_svg,[{text:"Data", color:"#0061fc"},{text:"You", color:"#00ff00"},{text:"AI", color:"#ff0000"}], {x:1500, y: 200, w:200, i:0, rot:270});
+
+  const pm_leg_svg_v = d3.create("svg")
+    .attr("width", 50)
+        .attr("height", 250).attr("class", "param_map").attr("id","pm_v");
+  const pm_leg_svg_h = d3.create("svg")
+    .attr("width", 250)
+        .attr("height", 50).attr("class", "param_map").attr("id","pm_h");
  
-  add_legend_continuous(svg,["0%", "100%"], {x:1600, y:20, w:200, i:0, rot:0},d3.interpolateHsl("red", "lime") )
+  add_legend_continuous(pm_leg_svg_v,["0%", "100%"], {x:10, y:180, w:200, i:0, rot:270},d3.interpolateHsl("red", "lime"), "param_map_h" )
+
+ add_legend_continuous(pm_leg_svg_h,["0%", "100%"], {x:10, y:20, w:200, i:4, rot:0},d3.interpolateHsl("red", "lime"), "param_map_h" )
   
 
   const osc_events = [];
   cfg.ui.plots.osc_events.forEach((m, i) => {
-    osc_events.push(add_osc_prob(svg, {prob_i: osc_events.length,
+    osc_events.push(add_osc_prob(event_svg, {prob_i: osc_events.length,
                                       ylabel: m.ylabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
                                       x_start : 0,
-                                      y_start: hline_height,
+                                      y_start: 0,
 					    dobar: m.dobar,
 					    dotrue:m.dotrue,
 					    plot_dims: scaff.plots.osc_probability,
@@ -864,24 +894,24 @@ const build_ui = (cfg) => {
 
   });
 
-  hline_height += 2 + scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
-  draw_line(scaff_el, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
+  hline_height = 2 +scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
+  draw_line(event_svg, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
 
   hline_height += 26;
 
-  draw_line(scaff_el, {ends:[[0, hline_height], [page_w,hline_height]], lw:4},"ml_scaffolding");
-   add_legend_discrete(svg,[{text:"Data", color:"#0061fc"},{text:"AI", color:"#b0009e"}], {x:455, y:hline_height +200, w:200, i:0, rot:270}, "ml_");
-  add_legend_continuous(svg,["0%", "100%"], {x:1300, y:hline_height + 20, w:200, i:1, rot:0},d3.interpolateHsl("red", "lime"), "grad_desc_param  ml_")
-  add_legend_continuous(svg,["Old", "New"], {x:1300, y:hline_height + 20, w:200, i:2, rot:0},d3.interpolateLab("blue", "red"), "walker_param  ml_")
+  draw_line(ml_svg, {ends:[[0, 0], [page_w,0]], lw:4},"ml_scaffolding");
+   add_legend_discrete(ml_svg,[{text:"Data", color:"#0061fc"},{text:"AI", color:"#b0009e"}], {x:455, y:150, w:200, i:0, rot:270}, "ml_");
+  add_legend_continuous(ml_svg,["0%", "100%"], {x:1300, y: 10, w:200, i:1, rot:0},d3.interpolateHsl("red", "lime"), "grad_desc_param  ml_")
+  add_legend_continuous(ml_svg,["Old", "New"], {x:1300, y:10, w:200, i:2, rot:0},d3.interpolateLab("blue", "red"), "walker_param  ml_")
 
   
-  let ml = cfg.ui.plots.machine_learning[0];
-  const machine_learning = add_osc_prob(svg, {prob_i: 0,
+  let ml = cfg.ui.plots.machine_learning.events;
+  const machine_learning = add_osc_prob(ml_svg, {prob_i: 0,
                                       ylabel: ml.ylabel,
                                       xrange: ml.xrange,
                                       yrange: ml.yrange,
                                       x_start : 0,
-                                      y_start: hline_height +40,
+                                      y_start: 10,
 					    dobar: ml.dobar,
 					    dotrue:ml.dotrue,
 					    plot_dims: scaff.plots.osc_probability,
@@ -892,34 +922,34 @@ const build_ui = (cfg) => {
 					      interpolate_between:true,
                                               show_ml:false,});
   
-  let ml_lh_trace = add_param_trace(svg, {trace_i: 0,
+  let ml_lh_trace = add_param_trace(ml_svg, {trace_i: 0,
                                         param_i: 0,
                                         label: cfg.controls.likelihood[1].label,
                                         units: cfg.controls.likelihood[1].units,
                                         yrange: cfg.controls.likelihood[1].range,
-                                        x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml,
-                                        y_start: hline_height +60,
+                                        x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml,
+                                        y_start: 30,
                                         plot_dims: scaff.plots.ml_trace,
 					cls: "ml_"});
 
   const ml_text_elements = [];
-  cfg.ui.ml_status.forEach((m, i) => {
-    ml_text_elements.push(draw_updatable_text(top_right_text, {x: 0 +200*i, y: hline_height + 20}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
+  cfg.ui.plots.machine_learning.ml_status.forEach((m, i) => {
+    ml_text_elements.push(draw_updatable_text(ml_svg, {x: scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml +200*i, y: 20}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
   });
 
 
   const ml_walkers = []
 
-  cfg.ui.plots.ml_walker.forEach((m, i) => {
-  ml_walkers.push(add_ml_walker(svg, {lh_i: ml_walkers.length,
+  cfg.ui.plots.machine_learning.ml_param_maps.forEach((m, i) => {
+  ml_walkers.push(add_ml_walker(ml_svg, {lh_i: ml_walkers.length,
                                     ylabel: m.ylabel,
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml + scaff.plots.ml_trace.w + 50,
-                                      y_start: hline_height +50,
+                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml + scaff.plots.ml_trace.w + 50,
+                                      y_start: 40,
                                       num_walkers:10,
-					    plot_dims: scaff.plots.ml_walker,
+					    plot_dims: scaff.plots.param_maps,
 					    title:m.title,
 					    cls:"walker_param ml_prob",
 					    axiscls:"ml_",
@@ -929,16 +959,16 @@ const build_ui = (cfg) => {
 
   const ml_grad_disp = []
 
-  cfg.ui.plots.ml_walker.forEach((m, i) => {
-  ml_grad_disp.push(add_grad_desc_maps(svg, {lh_i: ml_grad_disp.length,
+  cfg.ui.plots.machine_learning.ml_param_maps.forEach((m, i) => {
+  ml_grad_disp.push(add_grad_desc_maps(ml_svg, {lh_i: ml_grad_disp.length,
                                     ylabel: m.ylabel,
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.ml_walker.ml + scaff.plots.ml_trace.w + 50,
-                                      y_start: hline_height +50,
+                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml + scaff.plots.ml_trace.w + 50,
+                                      y_start: 40,
                                       num_walkers:10,
-					    plot_dims: scaff.plots.ml_walker,
+					    plot_dims: scaff.plots.param_maps,
 					    title:m.title,
 					    cls:"grad_desc_param ml_prob",
 					    axiscls:"ml_",
@@ -950,34 +980,47 @@ const build_ui = (cfg) => {
 
 
 
-  draw_line(scaff_el, {ends:[[0, hline_height  +scaff.plots.osc_probability.h+150], [page_w,hline_height +scaff.plots.osc_probability.h+150]], lw:4},"ml_scaffolding");
+  draw_line(ml_svg, {ends:[[0,   +scaff.plots.osc_probability.h+150], [page_w, +scaff.plots.osc_probability.h+150]], lw:4},"ml_scaffolding");
 
-  hline_height += scaff.plots.flvtriangles.w +100;
 
   
 
   const two_d_lhs = [];
   
   cfg.ui.plots.two_d_likelihood.forEach((m, i) => {
-  two_d_lhs.push(add_two_d_lh(svg, {lh_i: 0,
+    param_maps_svg.push(d3.create("svg")
+      .attr("width", scaff.plots.param_maps.w + 60)
+                        .attr("height", scaff.plots.param_maps.h + 100));
+  two_d_lhs.push(add_two_d_lh(param_maps_svg[param_maps_svg.length-1], {lh_i: 0,
                                     ylabel: m.ylabel,
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : 1550,
-                                    y_start: 50 + (scaff.plots.two_d_likelihood.h + 50)*i,
-					    plot_dims: scaff.plots.two_d_likelihood,
+                                      x_start : 0,
+                                    y_start: 0,
+					    plot_dims: scaff.plots.param_maps,
 					    title:m.title,
-					    cls:"prob",
+					    cls:"prob tdlh",
 					    axiscls:"",
 					    interpolate_between:false}));
 
   });
 
   // Append the SVG element.
-  container.append(svg.node());
+  $('#trace-panel').append(trace_svg.node());
+  $('#event-panel').append(event_svg.node());
+  $('#ai-panel').append(ml_svg.node());
+  $('#map-panel').append(pm_leg_svg_v.node());
+  $('#map-panel').append(pm_leg_svg_h.node());
+  param_maps_svg.forEach((m) => {
+    $('#map-panel').append(m.node());
+  })
+  //container.append(trace_svg.node());
+ // container.append(event_svg.node());
+  //container.append(ml_svg.node());
+  
 
-  return {svg:svg,
+  return {
     traces: traces,
            text_elements: text_elements,
 	   osc_events: osc_events,
@@ -1074,7 +1117,6 @@ $(document).on("keypress", function( event ){
 
 websocket.onmessage = ({data}) => {
   const obj = JSON.parse(data);
-  console.log((Date.now()/1000) - obj.time_sent)
 
   if (obj.cmd == "ui_start"){
     window.requestAnimationFrame(create_ui);   
@@ -1128,6 +1170,7 @@ websocket.onmessage = ({data}) => {
       ui_els.ml_text_elements[0].update(obj.ml_status);
       ui_els.ml_text_elements[1].update(obj.ml_likelihood);
       ui_els.ml_lh_trace.update(obj.ml_likelihood);
+      console.log(obj.ml_mode)
       if (obj.ml_mode == "MCMC"){
         $(".grad_desc_param").hide();
         $(".walker_param").show();
@@ -1145,6 +1188,11 @@ websocket.onmessage = ({data}) => {
           ui_els.ml_grad_disp[0].update([obj.ml_grad_desc_vals[1], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
           ui_els.ml_grad_disp[1].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
           ui_els.ml_grad_disp[2].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[1]], obj.ml_likelihood);
+        }
+        else if (ml_status=="Complete"){
+          ui_els.ml_grad_disp[0].complete();
+          ui_els.ml_grad_disp[1].complete();
+          ui_els.ml_grad_disp[2].complete();
         }
         ml_status = obj.ml_status
       }
