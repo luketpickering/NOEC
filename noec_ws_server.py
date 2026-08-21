@@ -63,7 +63,7 @@ class InputProcessor:
     self.ml_nue_events = [0 for i in range(self.true_bin_num)]
     self.ml_nue_bevents = [0 for i in range(self.true_bin_num)]
     self.ml_Es= np.linspace(0.5,6.4,self.true_bin_num)
-    self.ml_lh = 0
+    self.ml_lh = 0.000001
     self.ml_walker_pos = [[0,0,0] for _ in range(10)]
     self.ml_grad_desc_vals = [0,0,0]
 
@@ -203,8 +203,8 @@ class InputProcessor:
     Es, mu_osc_probs,e_osc_probs,e_bosc_probs = self.calc_events(mapped_vals,self.length, self.true_bin_num)
     return Es, mu_osc_probs, e_osc_probs,e_bosc_probs
 
-  def mcmc_take_step(self,current, prob_func):
-    step = [ np.random.normal(c, 100) for c in current]
+  def mcmc_take_step(self,current, prob_func, norm_scale=100):
+    step = [ np.random.normal(c, norm_scale) for c in current]
     if prob_func(step) > prob_func(current):
         return step
     elif prob_func(step) == -np.inf:
@@ -222,17 +222,18 @@ class InputProcessor:
         return 0
     return -np.inf
   
-  def ml_mcmc(self, time_iter=0.1, noise=False, num_walkers = 10):
-     time.sleep(2)
+  def ml_mcmc(self, time_iter=0.1, noise=False, num_walkers = 10, norm_scale=100):
      fitting_Es = copy.deepcopy(self.true_Es_disp)
      poster_func =  lambda x: -self.calculate_likelihood(self.ml_probs_func_display(x)[2],self.true_e_events_disp) + self.log_uniform_prior(x)
      vals = [[[random.randint(0,1024) for _ in range(3)]] for j in range(num_walkers)]
      posts = [0 for i in range(num_walkers)]
      avg_lh = 0
-     while avg_lh < 85  or  self.ml_lh < 98:
+     count = 0
+     while avg_lh < 80  or  self.ml_lh < 98:
+       count +=1
        for j in range(num_walkers):
          posts[j] = poster_func(vals[j][-1])
-         vals[j].append(self.mcmc_take_step(vals[j][-1], poster_func))
+         vals[j].append(self.mcmc_take_step(vals[j][-1], poster_func, norm_scale=norm_scale))
        ml_walker_pos = [vals[k][-1] for k in range(num_walkers)]
        for j in range(len(ml_walker_pos)):
          for ii, v in enumerate(ml_walker_pos[j]):
@@ -241,22 +242,27 @@ class InputProcessor:
        best_walk = posts.index(max(posts))
        avg_lh = np.sum([self.ml_lh_disp(vals[i][-1]) for i in range(num_walkers)])/num_walkers
        self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(vals[best_walk][-1])
-       self.ml_lh = round(avg_lh)
+       self.ml_lh = round(self.ml_lh_disp(vals[best_walk][-1]))
        time.sleep(time_iter)
+     return count
      
 
-  def ml_fit_to_true(self, time_iter=0.1, noise=False):
+  def ml_fit_to_true(self, time_iter=0.1, noise=False, learning_step=1000):
     time.sleep(2)
     fitting_Es = copy.deepcopy(self.true_Es_disp)
     currentVals = [random.randint(0,1024) for i in range(4)]
-    learning_step = 1000
     steps = 0
-    while self.ml_lh <100 or (steps <500 and self.ml_lh<95):
+    count = 0
+    while self.ml_lh <100 or (steps <(100*(100-self.ml_lh)) and self.ml_lh<95):
+      count +=1
+      cost_grad = self.get_gradient(self.cost,currentVals)
       time.sleep(time_iter)
-      if steps >600 :
+      if steps> 100*np.exp(self.ml_lh/43):#formula found through trial and error
         currentVals = [random.randint(0,1024) for i in range(4)]
         steps = 0
-      cost_grad = self.get_gradient(self.cost,currentVals)
+        cost_grad = self.get_gradient(self.cost,currentVals)
+        #print("restart")
+      #print(steps,self.ml_lh,((cost_grad[0]*learning_step)**2 + (cost_grad[1]*learning_step)**2+ (cost_grad[2]*learning_step)**2)**0.5, currentVals)
       for i in range(len(currentVals)):
         currentVals[i] -= learning_step*cost_grad[i]
         if currentVals[i] > 1023:
@@ -267,6 +273,7 @@ class InputProcessor:
       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(currentVals)
       self.ml_lh = self.ml_lh_disp(currentVals)
       self.ml_grad_desc_vals = currentVals
+    return count
       
       
       
@@ -313,9 +320,9 @@ class InputProcessor:
 
   def process(self, data):
     if (abs(self.length-round(data['L_km']/1023*2000)) > 20):
-      self.length = round(data['L_km']/1023*2000)
-    self.calc_true_events()
-    #print(data)
+      self.length = 1300
+      self.calc_true_events()
+    print(data)
     data["vals"] = []
     data['hist'] = True
     #print(data["ADCs"])
@@ -326,7 +333,7 @@ class InputProcessor:
         else:
           data["vals"].append(self.true_vals_mapped[i])
     #print(data["vals"])
-    data["L_km"] = self.length
+    data["L_km"] = 1300
     data["start_ml"] =True
 
     data ["time_sent"] = time.time();
@@ -350,8 +357,7 @@ class InputProcessor:
       if self.load_thread == None:
         print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['noise'],))
-        self.load_thread.start()
-    data["ml_mode"] = "MCMC" 
+        self.load_thread.start() 
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):
