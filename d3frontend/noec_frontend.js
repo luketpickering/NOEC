@@ -450,17 +450,21 @@ const add_osc_prob= (parent_el, prob_data) => {
         .attr("d", line);
     return [pg,p];
   };
-    
-  let nu_path = build_path(nu_line, prob_data.cls +"-series nu",data);
+
   let nu_path_true = null;
   let nu_path_ml;
-  if(nu_line_true){
-    nu_path_true = build_path(nu_line_true, prob_data.cls + "-series nutrue", true_data);
-  }
 
   if(nu_line_ml){
     nu_path_ml = build_path(nu_line_ml, prob_data.cls + "-series numl", ml_data);
   }
+    
+  let nu_path = build_path(nu_line, prob_data.cls +"-series nu",data);
+  
+  if(nu_line_true){
+    nu_path_true = build_path(nu_line_true, prob_data.cls + "-series nutrue", true_data);
+  }
+
+  
   
   el.append("text")
     .attr("x", (pd.w/2))                    
@@ -470,6 +474,19 @@ const add_osc_prob= (parent_el, prob_data) => {
   
   return {el:el, update: (d,d_t,d_ml,step) => {
     data.length =0
+    if(nu_line_ml){
+      ml_data.length = 0;
+      if (step){
+	let step_correction = (d_ml[1][0] - d_ml[0][0])/2;
+	d_ml.forEach((e)=>{ml_data.push([e[0]-step_correction,e[1]])});
+        nu_line_ml.curve(d3.curveStepAfter);
+      }
+      else{
+	d_ml.forEach((e)=>{ml_data.push(e)});
+        nu_line_ml.curve(d3.curveNatural);
+      }
+     nu_path_ml[1].attr("d", nu_line_ml);
+  }
     if (step){
 	let step_correction = (d[1][0] - d[0][0])/2;
 	d.forEach((e)=>{data.push([e[0]-step_correction,e[1]])});
@@ -504,19 +521,7 @@ const add_osc_prob= (parent_el, prob_data) => {
 	nu_line.curve(d3.curveNatural);
       }
     }
-   if(nu_line_ml){
-      ml_data.length = 0;
-      if (step){
-	let step_correction = (d_ml[1][0] - d_ml[0][0])/2;
-	d_ml.forEach((e)=>{ml_data.push([e[0]-step_correction,e[1]])});
-        nu_line_ml.curve(d3.curveStepAfter);
-      }
-      else{
-	d_ml.forEach((e)=>{ml_data.push(e)});
-        nu_line_ml.curve(d3.curveNatural);
-      }
-     nu_path_ml[1].attr("d", nu_line_ml);
-  }}
+   }
          }};
 
 const add_3flavor_triangle = (parent_el, flvtri_data) => {
