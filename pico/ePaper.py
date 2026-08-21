@@ -625,7 +625,7 @@ if __name__=='__main__':
     
     epd = EPD_2in13_V3_Landscape()
     epd.Clear()
-    
+    """
     epd.fill(0xff)
     epd.text("Neutrino fun fact!", 0, 10, 0x00)
     epd.display(epd.buffer)
@@ -645,17 +645,20 @@ if __name__=='__main__':
     epd.Display_Base(epd.buffer)
     epd.delay_ms(2000)
     epd.Clear()
+    
+    """
     epd.delay_ms(2000)
     # found in https://gist.github.com/dnywh/a6c8878af0e1f38f85fc0f668e12449d#file-pico_frame_buffer_images-py
     epd.blit(fb, 0, 0)
     epd.display(epd.buffer)
-    epd.delay_ms(2000)
+    epd.delay_ms(30000)
+    """
     epd.init()
     for i in range(0, 10):
         epd.fill_rect(175, 105, 10, 10, 0xff)
         epd.text(str(i), 177, 106, 0x00)
         epd.display_Partial(epd.buffer)
-        
+    """
     print("sleep")
     epd.init()
     epd.Clear()

@@ -11,7 +11,7 @@ import sys
 i2c = I2C(1, scl=Pin(19), sda=Pin(18))
 #print(f"i2c results: {i2c.scan()}")
 mcp = mcp23017.MCP23017(i2c, 32)
-mcp[0].output(1)
+
 
 
 hist_pin = Pin(12, Pin.IN)
@@ -20,7 +20,7 @@ ml_pin = Pin(14, Pin.IN)
 slow_load_pin = Pin(15, Pin.IN)
 distance_pin = ADC(Pin(26))
 
-spi_adc = SPI(0, baudrate=1_000_000, polarity=0, phase=0, sck=2, mosi=3, miso=4)
+spi_adc = SPI(0, baudrate=1_000_000, polarity=0, phase=0, sck=2, mosi=3, miso=4)#was 2,3,4
 adc_a_cs = Pin(1, mode=Pin.OUT, value=1)
 adc_b_cs = Pin(17, mode=Pin.OUT, value=1)
 
@@ -46,6 +46,11 @@ def readadc(chan):
 def readfour():
     return [readadc(i) for i in range(12,16)]
     
+def bool_to_output(in_bool):
+    if in_bool:
+        return 1
+    else:
+        return 0
 tick = 0
 while True:
     distances = []
@@ -55,7 +60,15 @@ while True:
     for i in range(1000):
      distances.append(distance_pin.read_u16() >>6)
     distance = sum(distances)/ len(distances)
-    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "ADCStates": [True,True,True,True],"hist": bool(hist_pin.value()), "noise":bool(noise_pin.value()), "start_ml":bool(ml_pin.value()), "slow_load":bool(slow_load_pin.value()), "L_km": distance}))
+    if mcp.pin(0):
+        ml_mode = "MCMC"
+    else:
+        ml_mode = "GD"
+    mcp[8].output(mcp.pin(0))
+    mcp[9].output(mcp.pin(1))
+    mcp[10].output(mcp.pin(2))
+    mcp[11].output(mcp.pin(3))
+    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "ADCStates": [True,True,True,True],"hist":mcp.pin(0),"ml_mode":ml_mode, "noise":mcp.pin(1), "start_ml":mcp.pin(2), "slow_load":mcp.pin(3), "L_km": distance}))
     tick +=1
-    sleep(0.1)
+    sleep(0.15)
     
