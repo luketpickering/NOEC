@@ -54,6 +54,36 @@ const draw_updatable_text = (parent_el, text_data, update, cls=null) => {
   return {el: el, update: (v) => { el.text(update(v)); }};
 }
 
+const draw_status_panel = (parent_el, panel_data,update,update_col, cls=null) => {
+  const el = parent_el.append("g");
+  if(cls){
+    el.attr("class", cls);
+  }
+  const rect = draw_rect(el,panel_data , cls);
+  const label = draw_text(el, {x:panel_data.x + panel_data.w/2, y:panel_data.y + 20, text:panel_data.text}, cls + " status_title");
+  const text = draw_updatable_text(el, {x:panel_data.x +panel_data.w/2 , y:panel_data.y +panel_data.h/2}, update, cls + " status_cont");
+  return {rect: rect, update: (v) => {text.update(v);rect.attr("stroke",update_col(v));label.attr("fill", update_col(v));text.el.attr("fill", update_col(v));label.attr("stroke", update_col(v));text.el.attr("stroke", update_col(v));}};
+}
+
+const create_discrete_update_color_fun = (colour_dict) => {
+  return  (v) => {
+    for(let k in colour_dict){
+      if (v==k){
+        return colour_dict[k]
+      }
+    }
+    return "#000000"
+  }
+
+}
+
+const create_continuous_update_color_fun = (colour_int, max_val) => {
+  return (v) => {
+    return colour_int(v/max_val);
+  
+}
+}
+
 const add_mode_choice = (parent_el, mode_choice_data) => {
   const i = mode_choice_data.i;
   const w = mode_choice_data.w;
@@ -87,7 +117,7 @@ const add_legend_discrete = (parent_el, labels, pos_data, cls="") => {
     let leg_text = draw_text(el, {x:current_width + 20, y: Math.floor(current_width/w)*20, text:m.text}, cls+ "legend disc");
     console.log(leg_text);
     console.log(current_width)
-    current_width += m.text.length*14 +20;
+    current_width += m.text.length*20 +20;
   })
 }
 
@@ -339,40 +369,33 @@ const add_grad_desc_maps  = (parent_el, grad_desc_data) => {
   const lh_color = d3.interpolateHsl("red", "lime"); 
 
   const data = [];
-  const currentPos = [grad_desc_data.xrange[0],grad_desc_data.yrange[0]]
   const pg = el.append("g").attr("transform", `translate(${pd.ml},${pd.mt})`);
-  const marker = pg.append("marker").attr("id","arrow").attr("markerWidth", 5).attr("markerHeight",5);
-  marker.append('path').attr("d","M 0 0 L 10 5 L 0 10 z").attr("fill","context-fill").attr("stroke","context-stroke");
-  const line = pg.append("line").attr("x1",0)
-              .attr("x2",0)
-              .attr("y1",0)
-              .attr("y2",0)
-              .attr("stroke", "red")
-              .attr("stroke-width","3")
-              .attr("marker-end","url(#arrow)");
-
+  const lines = [];
+  
   const update_line = (d,lh) => {
+    data.push(d);
+    console.log(lines.length);
+    if (lines.length> 0){
+      lines[lines.length -1].attr("marker-end","none");
+    }
+    if (data.length > 1){
     
-      console.log("d");
-      console.log(d);
-      console.log("currentPos");
-    console.log(currentPos);
-
-    if (d[0] != currentPos[0] || d[1] != currentPos[1]){ 
-    line.attr("x1",x(currentPos[0])).attr("y1",y(currentPos[1])).attr("x2",x(d[0])).attr("y2",y(d[1])).attr("stroke",lh_color(lh/100));
-    currentPos.length = 0;
-    currentPos.push(d[0]);
-    currentPos.push(d[1]);
+    lines.push(pg.append("line").attr("x1",x(data[data.length-2][0]))
+              .attr("x2",x(d[0]))
+               .attr("y1",y(data[data.length-2][1]))
+              .attr("y2",y(d[1]))
+              .attr("stroke", lh_color(lh/100))
+              .attr("stroke-width","3")
+               .attr("marker-end","url(#arrow)"))
     }
   }
 
   return {el:el, update: (d,lh) => {
     update_line(d,lh);
-    currentPos.length =0;
-    currentPos.push(d[0]);
-    currentPos.push(d[1]);
   }, complete: () =>{
-    line.attr("marker-end","url(#end_point)");}};
+    lines[lines.length -1].attr("marker-end","url(#end_point)");},
+          uncomplete: () => {lines[lines.length -1].attr("marker-end","url(#arrow)");},
+          restart: () =>{lines.forEach((m)=>{m.remove()});lines.length = 0; data.length = 0}};
 }
 
 const add_osc_prob= (parent_el, prob_data) => {
@@ -467,9 +490,9 @@ const add_osc_prob= (parent_el, prob_data) => {
   
   
   el.append("text")
-    .attr("x", (pd.w/2))                    
-    .attr("y", 20)
-       .attr("text-anchor", "middle") 
+    .attr("text-anchor", "middle")
+    .attr("x", pd.w/2 +pd.ml)                    
+    .attr("y", 20) 
     .text(prob_data.title);
   
   return {el:el, update: (d,d_t,d_ml,step) => {
@@ -785,12 +808,13 @@ const build_ui = (cfg) => {
 
   const param_maps_svg = []
   
+  const marker_size = 5
+  const end_marker_size = 7;
+  const marker = ml_svg.append("def").append("marker").attr("id","arrow").attr("markerWidth", marker_size).attr("markerHeight",marker_size).attr("orient","auto-start-reverse").attr("refX",marker_size).attr("refY",marker_size/2);
+  marker.append('path').attr("d",`M 0 0 L ${marker_size} ${marker_size/2} L 0 ${marker_size}`).attr("fill","none").attr("stroke","context-stroke");
 
-  const marker = ml_svg.append("def").append("marker").attr("id","arrow").attr("markerWidth", 3).attr("markerHeight",3).attr("orient","auto-start-reverse").attr("refX",3).attr("refY",1.5);
-  marker.append('path').attr("d","M 0 0 L 3 1.5 L 0 3 ").attr("fill","none").attr("stroke","context-stroke");
-
-  const c_marker = ml_svg.append("marker").attr("id","end_point").attr("markerWidth", 5).attr("markerHeight",5).attr("orient","auto-start-reverse").attr("refX",0).attr("refY",0);
-  c_marker.append("circle").attr("cx",2).attr("cy",2).attr("r",1.5).attr("fill", "lime").attr("stroke","context-stroke");
+  const c_marker = ml_svg.append("marker").attr("id","end_point").attr("markerWidth", end_marker_size).attr("markerHeight",end_marker_size).attr("orient","auto-start-reverse").attr("refX",end_marker_size/2).attr("refY",end_marker_size/2);
+  c_marker.append("circle").attr("cx",end_marker_size/2).attr("cy",end_marker_size/2).attr("r",end_marker_size/4).attr("fill", "lime").attr("stroke","context-stroke");
 
   const mode_choices = [];
   cfg.controls.modes.forEach((m, i)=>{
@@ -837,15 +861,8 @@ const build_ui = (cfg) => {
     }
   });
 
-  let lh_trace = add_param_trace(trace_svg, {trace_i: traces.length,
-                                        param_i: 0,
-                                        label: cfg.controls.likelihood[0].label,
-                                        units: cfg.controls.likelihood[0].units,
-                                        yrange: cfg.controls.likelihood[0].range,
-                                        x_start : 0,
-                                       y_start: hline_height,
-                                       plot_dims: scaff.plots.trace,
-				       cls: ""});
+  const lh_panel = draw_status_panel(trace_svg, {x:1200, y:hline_height +30, h:150, w:200, text:"ACCURACY"},(v) => { return (` ${v}%`); },create_continuous_update_color_fun(d3.interpolateHsl("red", "lime"),100),"lh_status");
+  
 
   
   hline_height += 2 + scaff.plots.trace.mt + scaff.plots.trace.h + scaff.plots.trace.mb;
@@ -866,7 +883,7 @@ const build_ui = (cfg) => {
     text_elements.push(draw_updatable_text(top_right_text, {x: 10+ 200*i, y: 10}, (v) => { return (m.label + ` ${v}`); }, "ticker"));
   });
 
-  add_legend_discrete(event_svg,[{text:"Data", color:"#0061fc"},{text:"You", color:"#00ff00"},{text:"AI", color:"#ff0000"}], {x:1500, y: 200, w:200, i:0, rot:270});
+  add_legend_discrete(event_svg,[{text:"Data", color:"#0061fc"},{text:"You", color:"#00ff00"},{text:"AI", color:"#ff0000"}], {x:1520, y: 240, w:300, i:0, rot:270});
 
   const pm_leg_svg_v = d3.create("svg")
     .attr("width", 50)
@@ -877,7 +894,7 @@ const build_ui = (cfg) => {
  
   add_legend_continuous(pm_leg_svg_v,["0%", "100%"], {x:10, y:180, w:200, i:0, rot:270},d3.interpolateHsl("red", "lime"), "param_map_h" )
 
- add_legend_continuous(pm_leg_svg_h,["0%", "100%"], {x:10, y:20, w:200, i:4, rot:0},d3.interpolateHsl("red", "lime"), "param_map_h" )
+  add_legend_continuous(pm_leg_svg_h,["0%", "100%"], {x:10, y:20, w:200, i:4, rot:0},d3.interpolateHsl("red", "lime"), "param_map_h" )
   
 
   const osc_events = [];
@@ -899,48 +916,17 @@ const build_ui = (cfg) => {
 
   });
 
-  hline_height = 2 +scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb;
+  hline_height = 2 +scaff.plots.osc_probability.mt + scaff.plots.osc_probability.h + scaff.plots.osc_probability.mb ;
   draw_line(event_svg, { ends: [ [0, hline_height], [page_w, hline_height] ], lw:4 }, "scaffolding");
 
   hline_height += 26;
 
   draw_line(ml_svg, {ends:[[0, 0], [page_w,0]], lw:4},"ml_scaffolding");
-   add_legend_discrete(ml_svg,[{text:"Data", color:"#0061fc"},{text:"AI", color:"#b0009e"}], {x:455, y:150, w:200, i:0, rot:270}, "ml_");
   add_legend_continuous(ml_svg,["0%", "100%"], {x:1300, y: 10, w:200, i:1, rot:0},d3.interpolateHsl("red", "lime"), "grad_desc_param  ml_")
   add_legend_continuous(ml_svg,["Old", "New"], {x:1300, y:10, w:200, i:2, rot:0},d3.interpolateLab("blue", "red"), "walker_param  ml_")
 
   
   let ml = cfg.ui.plots.machine_learning.events;
-  const machine_learning = add_osc_prob(ml_svg, {prob_i: 0,
-                                      ylabel: ml.ylabel,
-                                      xrange: ml.xrange,
-                                      yrange: ml.yrange,
-                                      x_start : 0,
-                                      y_start: 10,
-					    dobar: ml.dobar,
-					    dotrue:ml.dotrue,
-					    plot_dims: scaff.plots.osc_probability,
-					    truth:ml.truth,
-					    title:ml.title,
-					      cls: "ml_prob",
-					      axiscls:"ml_",
-					      interpolate_between:true,
-                                              show_ml:false,});
-  
-  let ml_lh_trace = add_param_trace(ml_svg, {trace_i: 0,
-                                        param_i: 0,
-                                        label: cfg.controls.likelihood[1].label,
-                                        units: cfg.controls.likelihood[1].units,
-                                        yrange: cfg.controls.likelihood[1].range,
-                                        x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml,
-                                        y_start: 30,
-                                        plot_dims: scaff.plots.ml_trace,
-					cls: "ml_"});
-
-  const ml_text_elements = [];
-  cfg.ui.plots.machine_learning.ml_status.forEach((m, i) => {
-    ml_text_elements.push(draw_updatable_text(ml_svg, {x: scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml +200*i, y: 20}, (v) => { return (m.label + ` ${v}`); }, "ml_prob"));
-  });
 
 
   const ml_walkers = []
@@ -951,8 +937,8 @@ const build_ui = (cfg) => {
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml + scaff.plots.ml_trace.w + 50,
-                                      y_start: 40,
+                                         x_start : 50 + scaff.page.ml_status.w,
+                                      y_start: 10,
                                       num_walkers:10,
 					    plot_dims: scaff.plots.param_maps,
 					    title:m.title,
@@ -963,15 +949,16 @@ const build_ui = (cfg) => {
   });
 
   const ml_grad_disp = []
-
+  const ml_status_panel = draw_status_panel(ml_svg, {x:40, y:140, h:100, w:200, text:"STATUS"},(v) => { return (` ${v}`); },create_discrete_update_color_fun({"Not Started": "red", "Restart":"#0061fc","In Progress": "orange", "Complete":"lime"}),"ml_status");
+  const ml_lh_panel = draw_status_panel(ml_svg, {x:40, y:260, h:100, w:200, text:"ACCURACY"},(v) => { return (` ${v}%`); },create_continuous_update_color_fun(d3.interpolateHsl("red", "lime"),100),"ml_status");
   cfg.ui.plots.machine_learning.ml_param_maps.forEach((m, i) => {
   ml_grad_disp.push(add_grad_desc_maps(ml_svg, {lh_i: ml_grad_disp.length,
                                     ylabel: m.ylabel,
                                     xlabel: m.xlabel,
                                       xrange: m.xrange,
                                       yrange: m.yrange,
-                                      x_start : scaff.plots.osc_probability.w + scaff.plots.osc_probability.ml + scaff.plots.param_maps.ml + scaff.plots.ml_trace.w + 50,
-                                      y_start: 40,
+                                      x_start : 50 + scaff.page.ml_status.w,
+                                      y_start: 10,
                                       num_walkers:10,
 					    plot_dims: scaff.plots.param_maps,
 					    title:m.title,
@@ -980,12 +967,13 @@ const build_ui = (cfg) => {
 					    interpolate_between:false}));
 
   });
+  const ml_name = draw_updatable_text(ml_svg, {x: 140, y: 110}, (v) => { return ` ${v}`; }, "ml_prob ml_status");
 
   
 
 
 
-  draw_line(ml_svg, {ends:[[0,   +scaff.plots.osc_probability.h+150], [page_w, +scaff.plots.osc_probability.h+150]], lw:4},"ml_scaffolding");
+  draw_line(ml_svg, {ends:[[0,   +scaff.plots.osc_probability.h+180], [page_w, +scaff.plots.osc_probability.h+180]], lw:4},"ml_scaffolding");
 
 
   
@@ -1015,11 +1003,11 @@ const build_ui = (cfg) => {
   $('#trace-panel').append(trace_svg.node());
   $('#event-panel').append(event_svg.node());
   $('#ai-panel').append(ml_svg.node());
-  $('#map-panel').append(pm_leg_svg_v.node());
-  $('#map-panel').append(pm_leg_svg_h.node());
-  param_maps_svg.forEach((m) => {
-    $('#map-panel').append(m.node());
-  })
+  //$('#map-panel').append(pm_leg_svg_v.node());
+  //$('#map-panel').append(pm_leg_svg_h.node());
+  //param_maps_svg.forEach((m) => {
+    //$('#map-panel').append(m.node());
+  //})
   //container.append(trace_svg.node());
  // container.append(event_svg.node());
   //container.append(ml_svg.node());
@@ -1029,14 +1017,14 @@ const build_ui = (cfg) => {
     traces: traces,
            text_elements: text_elements,
 	   osc_events: osc_events,
-	   machine_learning:machine_learning,
-	   ml_text_elements:ml_text_elements,
-	   ml_lh_trace:ml_lh_trace,
-	   lh_trace:lh_trace,
 	   bulbs:bulbs,
            two_d_lhs: two_d_lhs,
            ml_walkers: ml_walkers,
            ml_grad_disp:ml_grad_disp,
+           ml_status_panel:ml_status_panel,
+           ml_lh_panel:ml_lh_panel,
+    lh_panel:lh_panel,
+    ml_name:ml_name,
 	 };
 }
 //Build UI ends here
@@ -1055,15 +1043,23 @@ let noise = false
 let hist = false
 let slow_load = false
 let ml = false
-let ml_status = "in progress"
+let ml_mode = ""
+let ml_status = "In Progress"
 let dialog
-
+let time = -1
 let score = 0
+let game_info
 
 function addScore(){
   let name = $('input[name=username]').val()
-  if (name != ""){
-    $.post("/add_score",{username:name,score:score, hist:hist, noise:noise, ml:ml, slow_load:slow_load});
+  console.log("add score");
+  console.log("time" + time);
+  if (name != "" &&  game_info.time >=0 ){
+    console.log("add score actually");
+    console.log(ml_status);
+    game_info.username = name;
+    console.log(game_info);
+    $.post("/add_score",game_info);
   }
   dialog.dialog("close")
 }
@@ -1089,16 +1085,24 @@ let form = dialog.find( "form" ).on( "submit", function( event ) {
 $(document).on("keypress", function( event ){
   
   let currentTime = Date.now();
-  if (event.code == "Enter"){
+  if (event.code == "KeyS"){
+    console.log(ml_status);
+    console.log(!(ml_status=="Complete"));
+    game_info = {score:score,time:time, noise:noise, ml:ml, slow_load:slow_load, mode_mcmc:ml_mode == "MCMC", ml_win: !(ml_status=="Complete")}
     let name = $('input[name=username]').val()
-  let currentTime = Date.now();
+    let currentTime = Date.now();
+    time = Math.round((currentTime - startTime)/1000)
   if ((currentTime - startTime) > 300000){
     score = 1;
   }
   else{
     score = 300- ((currentTime - startTime)/1000);
     console.log(score)
-    console.log("Time multiplier: " + 300- ((currentTime - startTime)/1000));
+    console.log("ct" + currentTime);
+    console.log("st" + startTime);
+    console.log(currentTime-startTime);
+    console.log("time" + time);
+    console.log("Time multiplier: " + (300- ((currentTime - startTime)/1000)));
   }
   score *= score_likelihood;
   console.log("Likelihood  multiplier: " + score_likelihood);
@@ -1106,7 +1110,7 @@ $(document).on("keypress", function( event ){
     score *=1.5;
   }
   
-  if (hist){
+  if (slow_load){
     score *=1.5;
   }
 
@@ -1146,10 +1150,9 @@ websocket.onmessage = ({data}) => {
     slow_load = obj.slow_load
 
     ui_els.traces.forEach( (m, i) => { if (obj.ADCStates[i] == true){ $("#trace-"+i).show();m.update(obj.vals[m.param_i]);} else{$("#trace-"+i).hide();} } );
-    ui_els.lh_trace.update(obj.osc_probs.likelihood);
     ui_els.text_elements[0].update(obj.tick);
     ui_els.text_elements[1].update(obj.L_km);
-    ui_els.text_elements[2].update(obj.osc_probs.likelihood)
+    ui_els.lh_panel.update(obj.osc_probs.likelihood);
     if (obj.start_ml){
       ui_els.osc_events[0].update(obj.osc_events.numu,obj.osc_events.numu_true,obj.osc_probs.mlnumu,true);
       ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,obj.osc_probs.mlnue,true);
@@ -1167,16 +1170,16 @@ websocket.onmessage = ({data}) => {
     ui_els.two_d_lhs[0].update([obj.vals[1], obj.vals[0], likelihood]);
     ui_els.two_d_lhs[1].update([obj.vals[2], obj.vals[0], likelihood]);
     ui_els.two_d_lhs[2].update([obj.vals[2], obj.vals[1], likelihood]);
-    if (obj.start_ml){
+      if (obj.start_ml){
+        $("#opp_logo").attr("src", `${obj.ml_mode}logo.png`);
       $(".ml_prob").show();
       $(".ml_trace").show();
-      $(".ml_scaffolding").show()
-      ui_els.machine_learning.update(obj.osc_probs.mlnue,obj.osc_events.nue_true,false,true);
-      ui_els.ml_text_elements[0].update(obj.ml_status);
-      ui_els.ml_text_elements[1].update(obj.ml_likelihood);
-      ui_els.ml_lh_trace.update(obj.ml_likelihood);
-      console.log(obj.ml_mode)
+
+      $(".ml_scaffolding").show();
+      ui_els.ml_status_panel.update(obj.ml_status);
+      ui_els.ml_lh_panel.update(obj.ml_likelihood);
       if (obj.ml_mode == "MCMC"){
+        ui_els.ml_name.update("MCMC");
         $(".grad_desc_param").hide();
         $(".walker_param").show();
         if (ml_status=="In Progress"){
@@ -1186,23 +1189,32 @@ websocket.onmessage = ({data}) => {
         }
         ml_status = obj.ml_status
       }
-      else{
+        else{
+        ui_els.ml_name.update("Gradient Descent");
         $(".grad_desc_param").show();
         $(".walker_param").hide();
         if (ml_status=="In Progress"){
           ui_els.ml_grad_disp[0].update([obj.ml_grad_desc_vals[1], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
           ui_els.ml_grad_disp[1].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[0]], obj.ml_likelihood);
           ui_els.ml_grad_disp[2].update([obj.ml_grad_desc_vals[2], obj.ml_grad_desc_vals[1]], obj.ml_likelihood);
+          ui_els.ml_grad_disp[0].uncomplete();
+          ui_els.ml_grad_disp[1].uncomplete();
+          ui_els.ml_grad_disp[2].uncomplete();
         }
         else if (ml_status=="Complete"){
           ui_els.ml_grad_disp[0].complete();
           ui_els.ml_grad_disp[1].complete();
           ui_els.ml_grad_disp[2].complete();
         }
-        ml_status = obj.ml_status
-      }
+        else if (ml_status =="Restart"){
+          ui_els.ml_grad_disp[0].restart();
+          ui_els.ml_grad_disp[1].restart();
+          ui_els.ml_grad_disp[2].restart();
+          
+        }
+          ml_status = obj.ml_status
       
-    }
+        }}
     else{
       $(".ml_prob").hide();
       $(".ml_trace").hide();

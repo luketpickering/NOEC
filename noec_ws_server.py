@@ -66,6 +66,7 @@ class InputProcessor:
     self.ml_lh = 0.000001
     self.ml_walker_pos = [[0,0,0] for _ in range(10)]
     self.ml_grad_desc_vals = [0,0,0]
+    self.ml_status = "Not Started"
 
   def calc_true_events(self):
     self.true_Es, self.true_mu_events, self.true_e_events, self.true_e_bevents = self.calc_events(self.true_vals_mapped,self.length, self.true_bin_num)
@@ -99,7 +100,7 @@ class InputProcessor:
     e_bosc_probs = np.array([bosc_probs[i][1][0] for i in range(len(bosc_probs))])
     return Es ,mu_osc_probs,e_osc_probs,e_bosc_probs
   
-  def calc_events(self, vals, L, num_bins, flux_loc = 2, flux_scale=1, nu_num=100):
+  def calc_events(self, vals, L, num_bins, flux_loc = 2, flux_scale=1, nu_num=1500):
     Es = np.linspace(0.5,6.4,num_bins) #GeV
     flux = norm.pdf(Es, flux_loc, flux_scale)
     #print("Es:", Es) 
@@ -254,6 +255,7 @@ class InputProcessor:
     steps = 0
     count = 0
     while self.ml_lh <100 or (steps <(100*(100-self.ml_lh)) and self.ml_lh<95):
+      self.ml_status = "In Progress"
       count +=1
       cost_grad = self.get_gradient(self.cost,currentVals)
       time.sleep(time_iter)
@@ -261,7 +263,9 @@ class InputProcessor:
         currentVals = [random.randint(0,1024) for i in range(4)]
         steps = 0
         cost_grad = self.get_gradient(self.cost,currentVals)
-        #print("restart")
+        self.ml_status = "Restart"
+        time.sleep(2)
+        self.ml_status = "In Progress"
       #print(steps,self.ml_lh,((cost_grad[0]*learning_step)**2 + (cost_grad[1]*learning_step)**2+ (cost_grad[2]*learning_step)**2)**0.5, currentVals)
       for i in range(len(currentVals)):
         currentVals[i] -= learning_step*cost_grad[i]
@@ -273,6 +277,7 @@ class InputProcessor:
       self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(currentVals)
       self.ml_lh = self.ml_lh_disp(currentVals)
       self.ml_grad_desc_vals = currentVals
+    self.ml_status = "Complete"
     return count
       
       
@@ -322,7 +327,7 @@ class InputProcessor:
     if (abs(self.length-round(data['L_km']/1023*2000)) > 20):
       self.length = 1300
       self.calc_true_events()
-    print(data)
+    #print(data)
     data["vals"] = []
     data['hist'] = True
     #print(data["ADCs"])
@@ -400,6 +405,7 @@ class InputProcessor:
 
     self.previous_hist = data["hist"]
     self.previous_noise = data["noise"]
+    data["ml_status"] =self.ml_status
 
     return data
 

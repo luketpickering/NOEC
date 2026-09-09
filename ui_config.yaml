@@ -1,14 +1,13 @@
 noec:
   controls: # the ordering of these lists assigns
     modes:
-      - { name: "control_simple", label: "Simple"}
-      - { name: "control_advanced", label: "Advanced"}
+      - { name: "experiment", label: "DUNE"}
+      - { name: "detector", label: "Detector: FAR"}
       - { name: "demo_mcmc", label: "Demo: MCMC"}
       - { name: "demo_gc", label: "Demo: GD"}
     status:
       - { name: "uptime", label: "uptime [ticks]: "}
       - { name: "baseline", label: "baseline [km]: "}
-      - { name: "likelihood", label: "likelihood [%]: "}
     parameters:
       - { name: "Dm32", label: "Dm32", units: "1E-3 eV", ADCMx: 1024, range: [2.2, 2.6], true_val: 2.3}
       - { name: "Th23", label: "Th23", units: "deg", ADCMx: 1024, range: [35, 55], true_val: 40 }
@@ -23,20 +22,20 @@ noec:
     scaffolding:
       page:
         trace_panel : { w: 1512, h: 260 }
-        event_panel : { w: 1512, h: 260 }
-        ml_panel : { w: 1512, h: 260 }
+        event_panel : { w: 1512, h: 300 }
+        ml_panel : { w: 1512, h: 300 }
+        ml_status: { w: 300, h: 200}
       mode_select: { w: 120, h: 40, fs: 15 }
       plots:
-        trace: { w: 300, h: 150, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
+        trace: { w: 300, h: 150, ml: 70, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         ml_trace: { w: 150, h: 150, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         likelihood : {w: 300, h: 50, ml: 50, mt: 35, mr: 5, mb: 20, nyticks: 3 }
         flvtriangles: { w: 300, ml: 50, mt: 35, mr: 5, mb: 40, nticks: 3 }
-        osc_probability: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
-        osc_events: { w: 400, h: 160, ml: 60, mt: 35, mr: 5, mb: 40, nyticks: 3, nxticks: 5 }
-        param_maps: { w: 200, h: 200, ml: 40, mt: 20, mr: 0, mb: 40, nyticks: 5, nxticks: 5 }
-      line: { w: 4 }
+        osc_probability: { w: 390, h: 200, ml: 70, mt: 35, mr: 5, mb: 50, nyticks: 3, nxticks: 5 }
+        osc_events: { w: 400, h: 200, ml: 100, mt: 35, mr: 5, mb: 50, nyticks: 3, nxticks: 5 }
+        param_maps: { w: 300, h: 300, ml: 40, mt: 10, mr: 0, mb: 50, nyticks: 5, nxticks: 5 }
+      line: { w: 6 }
       labels:
-        - { text: "Oscillations"}
         - { text: "Events"}
         - { text: "AI"}
     plots:
@@ -45,13 +44,10 @@ noec:
         - { parameter: "Th23" }
         - { parameter: "dcp" }
       osc_events:
-        - { title: "Disappearance", ylabel: "P(numu -> numu)", xrange: [0,7], yrange: [0,50], osc_channel: [14, 14], dotrue: True }
-        - { title: "Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,10], osc_channel: [14, 12], dotrue: True }
-        - { title: "Appearance Bar", ylabel: "P(bnumu -> bnue)", xrange: [0,7], yrange: [0,10], osc_channel: [14, 12], dotrue: True }
+        - { title: "MUON NEUTRINOS", ylabel: "Detected Neutrinos", xrange: [0,6.3], yrange: [0,500], osc_channel: [14, 14], dotrue: True }
+        - { title: "ELECTRON NEUTRINOS", ylabel: "Detected Neutrinos", xrange: [0,6.3], yrange: [0,65], osc_channel: [14, 12], dotrue: True }
+        - { title: "ELECTRON ANTI-NEUTRINOS", ylabel: "Detected Neutrinos", xrange: [0,6.3], yrange: [0,50], osc_channel: [14, 12], dotrue: True }
       machine_learning:
-        ml_status:
-        - { name: "status", label: "status: "}
-        - { name: "likelihood", label: "likelihood [%]: "}
         events: { title: "Machine Learning Appearance", ylabel: "P(numu -> nue)", xrange: [0,7], yrange: [0,10], osc_channel: [14, 12], dobar: True, truth: False, dotrue: True }
         ml_param_maps:
         - { title: "", ylabel: "Dm32", xlabel: "Th32",  xrange: [35, 55], yrange: [2.2, 2.6], parameters: ["Dm32", "Th23"] }
