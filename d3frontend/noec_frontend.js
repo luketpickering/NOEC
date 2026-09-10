@@ -349,12 +349,14 @@ const add_ml_walker = (parent_el, walker_data) => {
           .attr("cy", y(m[1]))  
           .attr("fill", walker_color((i+1)/numPoints))
           .attr("class","");
+        console.log(walker_color((i+1)/numPoints));
     })
     }
   };
   return {el:el, update: (d) => {
     d.forEach((m,i) => {data[i].push(m);})
-     add_point();
+    add_point();
+    console.log("add point called");
   }}
   
 }
@@ -1163,6 +1165,7 @@ websocket.onmessage = ({data}) => {
       ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,[[0,0], [0,0]],true);
       ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,[[0,0], [0,0]],true);
     }
+      console.log("ml" + obj.start_ml);
     ui_els.bulbs[0].update(obj.hist);
     ui_els.bulbs[1].update(obj.noise)
     ui_els.bulbs[2].update(ml)
@@ -1173,16 +1176,19 @@ websocket.onmessage = ({data}) => {
       if (obj.start_ml){
         $("#opp_logo").attr("src", `${obj.ml_mode}logo.png`);
       $(".ml_prob").show();
-      $(".ml_trace").show();
-
+        $(".ml_trace").show();
+        console.log("ml" + obj.start_ml);
       $(".ml_scaffolding").show();
       ui_els.ml_status_panel.update(obj.ml_status);
-      ui_els.ml_lh_panel.update(obj.ml_likelihood);
+        ui_els.ml_lh_panel.update(obj.ml_likelihood);
+        console.log(obj.ml_mode);
       if (obj.ml_mode == "MCMC"){
         ui_els.ml_name.update("MCMC");
         $(".grad_desc_param").hide();
         $(".walker_param").show();
         if (ml_status=="In Progress"){
+          console.log("In progress");
+          console.log(obj.ml_walker_pos);
           ui_els.ml_walkers[0].update(obj.ml_walker_pos[0]);
           ui_els.ml_walkers[1].update(obj.ml_walker_pos[1]);
           ui_els.ml_walkers[2].update(obj.ml_walker_pos[2]);

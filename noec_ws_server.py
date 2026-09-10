@@ -230,6 +230,7 @@ class InputProcessor:
      posts = [0 for i in range(num_walkers)]
      avg_lh = 0
      count = 0
+     self.ml_status = "In Progress"
      while avg_lh < 80  or  self.ml_lh < 98:
        count +=1
        for j in range(num_walkers):
@@ -245,6 +246,7 @@ class InputProcessor:
        self.ml_Es, self.ml_numu_events, self.ml_nue_events, self.ml_nue_bevents = self.ml_probs_func_display(vals[best_walk][-1])
        self.ml_lh = round(self.ml_lh_disp(vals[best_walk][-1]))
        time.sleep(time_iter)
+     self.ml_status = "Complete"
      return count
      
 
@@ -339,7 +341,6 @@ class InputProcessor:
           data["vals"].append(self.true_vals_mapped[i])
     #print(data["vals"])
     data["L_km"] = 1300
-    data["start_ml"] =True
 
     data ["time_sent"] = time.time();
 
@@ -367,7 +368,9 @@ class InputProcessor:
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):
         print("Thread started")
+        print(data["ml_mode"])
         if data['ml_mode'] == "MCMC":
+          print("Is MCMC")
           self.ml_thread = threading.Thread(target=self.ml_mcmc)
         else:
           self.ml_thread = threading.Thread(target = self.ml_fit_to_true)
@@ -383,6 +386,7 @@ class InputProcessor:
       data["osc_probs"]["mlnueb"] = [ [self.ml_Es[i], self.ml_nue_bevents[i]] for i in range(len(self.ml_nue_bevents))]
       data["ml_likelihood"] = self.ml_lh
       data["ml_walker_pos"] = [[[self.ml_walker_pos[i][1], self.ml_walker_pos[i][0]] for i in range(len(self.ml_walker_pos))],[[self.ml_walker_pos[i][2], self.ml_walker_pos[i][0]] for i in range(len(self.ml_walker_pos))],[[self.ml_walker_pos[i][2], self.ml_walker_pos[i][1]] for i in range(len(self.ml_walker_pos))]]
+      print(self.ml_walker_pos)
 
     data["osc_probs"]["numu"] = [ [Es[i], mu_osc_probs[i]] for i in range(len(Es))]
     data["osc_probs"]["nue"] = [ [Es[i], e_osc_probs[i]] for i in range(len(Es))]
@@ -429,6 +433,6 @@ async def forward_to_ws(serial_device, baud, websocket):
 async def NOECWSServer(serial_device, baud=9600, ws_port=5678):
   async with serve(lambda ws: forward_to_ws(serial_device, baud, ws), "localhost", ws_port) as server:
     await server.serve_forever()
-
+    
 if __name__ == "__main__":
   asyncio.run(NOECWSServer(sys.argv[1]))

@@ -68,7 +68,7 @@ while True:
     mcp[9].output(mcp.pin(1))
     mcp[10].output(mcp.pin(2))
     mcp[11].output(mcp.pin(3))
-    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "ADCStates": [True,True,True,True],"hist":mcp.pin(0),"ml_mode":ml_mode, "noise":mcp.pin(1), "start_ml":mcp.pin(2), "slow_load":mcp.pin(3), "L_km": distance}))
+    print(obj_to_msg({"cmd": "UPDATE", "tick": tick, "states": states, "ADCs": vals, "ADCStates": [True,True,True,True],"hist":True,"ml_mode":ml_mode, "noise":mcp.pin(2), "start_ml":mcp.pin(1), "slow_load":mcp.pin(3), "L_km": distance}))
     tick +=1
     sleep(0.15)
     
