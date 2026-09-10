@@ -115,8 +115,6 @@ const add_legend_discrete = (parent_el, labels, pos_data, cls="") => {
     let rect = draw_rect(el, {x:current_width, y: -15, w:15, h:15}, "leg_box");
     rect.attr("stroke", m.color).attr("stroke-width",2).attr("fill", "none");
     let leg_text = draw_text(el, {x:current_width + 20, y: Math.floor(current_width/w)*20, text:m.text}, cls+ "legend disc");
-    console.log(leg_text);
-    console.log(current_width)
     current_width += m.text.length*20 +20;
   })
 }
@@ -349,14 +347,12 @@ const add_ml_walker = (parent_el, walker_data) => {
           .attr("cy", y(m[1]))  
           .attr("fill", walker_color((i+1)/numPoints))
           .attr("class","");
-        console.log(walker_color((i+1)/numPoints));
     })
     }
   };
   return {el:el, update: (d) => {
     d.forEach((m,i) => {data[i].push(m);})
     add_point();
-    console.log("add point called");
   }}
   
 }
@@ -376,7 +372,6 @@ const add_grad_desc_maps  = (parent_el, grad_desc_data) => {
   
   const update_line = (d,lh) => {
     data.push(d);
-    console.log(lines.length);
     if (lines.length> 0){
       lines[lines.length -1].attr("marker-end","none");
     }
@@ -841,7 +836,6 @@ const build_ui = (cfg) => {
   cfg.ui.plots.traces.forEach((m, i) => {
 
     let param_i = null;
-    //console.log(cfg.controls.parameters.length)
     for (var par_it = 0; par_it < cfg.controls.parameters.length; par_it++) {
       if (cfg.controls.parameters[par_it].name == m.parameter){
         param_i = par_it;
@@ -1054,13 +1048,8 @@ let game_info
 
 function addScore(){
   let name = $('input[name=username]').val()
-  console.log("add score");
-  console.log("time" + time);
   if (name != "" &&  game_info.time >=0 ){
-    console.log("add score actually");
-    console.log(ml_status);
     game_info.username = name;
-    console.log(game_info);
     $.post("/add_score",game_info);
   }
   dialog.dialog("close")
@@ -1088,8 +1077,6 @@ $(document).on("keypress", function( event ){
   
   let currentTime = Date.now();
   if (event.code == "KeyS"){
-    console.log(ml_status);
-    console.log(!(ml_status=="Complete"));
     game_info = {score:score,time:time, noise:noise, ml:ml, slow_load:slow_load, mode_mcmc:ml_mode == "MCMC", ml_win: !(ml_status=="Complete")}
     let name = $('input[name=username]').val()
     let currentTime = Date.now();
@@ -1135,7 +1122,6 @@ websocket.onmessage = ({data}) => {
 
   function create_ui(){
     console.log("Building UI");
-    //console.log(obj);
     ui_els = build_ui(obj.cfg.noec);
     $(".ml_prob").hide();
     $(".ml_trace").hide();
@@ -1143,7 +1129,6 @@ websocket.onmessage = ({data}) => {
   }
 
     function update_ui() {
-    //console.log(obj.osc_probs.numu)
     likelihood = obj.osc_probs.likelihood
     score_likelihood = obj.osc_probs.score_likelihood
     noise = obj.noise
@@ -1165,7 +1150,6 @@ websocket.onmessage = ({data}) => {
       ui_els.osc_events[1].update(obj.osc_events.nue,obj.osc_events.nue_true,[[0,0], [0,0]],true);
       ui_els.osc_events[2].update(obj.osc_events.bnue,obj.osc_events.bnue_true,[[0,0], [0,0]],true);
     }
-      console.log("ml" + obj.start_ml);
     ui_els.bulbs[0].update(obj.hist);
     ui_els.bulbs[1].update(obj.noise)
     ui_els.bulbs[2].update(ml)
@@ -1175,20 +1159,18 @@ websocket.onmessage = ({data}) => {
     ui_els.two_d_lhs[2].update([obj.vals[2], obj.vals[1], likelihood]);
       if (obj.start_ml){
         $("#opp_logo").attr("src", `${obj.ml_mode}logo.png`);
-      $(".ml_prob").show();
+        $("#opp_logo").show();
+        $(".ml_prob").show();
         $(".ml_trace").show();
-        console.log("ml" + obj.start_ml);
+        $(".ml_status").show();
       $(".ml_scaffolding").show();
       ui_els.ml_status_panel.update(obj.ml_status);
         ui_els.ml_lh_panel.update(obj.ml_likelihood);
-        console.log(obj.ml_mode);
       if (obj.ml_mode == "MCMC"){
         ui_els.ml_name.update("MCMC");
         $(".grad_desc_param").hide();
         $(".walker_param").show();
         if (ml_status=="In Progress"){
-          console.log("In progress");
-          console.log(obj.ml_walker_pos);
           ui_els.ml_walkers[0].update(obj.ml_walker_pos[0]);
           ui_els.ml_walkers[1].update(obj.ml_walker_pos[1]);
           ui_els.ml_walkers[2].update(obj.ml_walker_pos[2]);
@@ -1224,7 +1206,11 @@ websocket.onmessage = ({data}) => {
     else{
       $(".ml_prob").hide();
       $(".ml_trace").hide();
-      $(".ml_scaffolding").hide()
+      $(".ml_status").hide();
+      $(".ml_scaffolding").hide();
+      $("#opp_logo").hide();
+      $(".walker_param").hide();
+      $(".grad_desc_param").hide();
     }
   }
 };

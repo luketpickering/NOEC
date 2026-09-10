@@ -361,32 +361,22 @@ class InputProcessor:
   
     if data["slow_load"]:
       if self.load_thread == None:
-        print("Thread started")
         self.load_thread = threading.Thread(target = self.slow_data, args=(data['noise'],))
         self.load_thread.start() 
         
     if data["start_ml"]:       
       if self.ml_thread == None or (not self.ml_thread.is_alive()) and self.is_setting_changed(data["noise"]):
-        print("Thread started")
-        print(data["ml_mode"])
         if data['ml_mode'] == "MCMC":
-          print("Is MCMC")
           self.ml_thread = threading.Thread(target=self.ml_mcmc)
         else:
           self.ml_thread = threading.Thread(target = self.ml_fit_to_true)
         self.ml_thread.start()
-        data["ml_status"] = "In Progress"
-      elif not self.ml_thread.is_alive():
-        data['ml_status'] = "Complete"
-      else:
-        data["ml_status"] = "In Progress"
         
       data["osc_probs"]["mlnumu"] = [ [self.ml_Es[i], self.ml_numu_events[i]] for i in range(len(self.ml_numu_events))]
       data["osc_probs"]["mlnue"] = [ [self.ml_Es[i], self.ml_nue_events[i]] for i in range(len(self.ml_nue_events))]
       data["osc_probs"]["mlnueb"] = [ [self.ml_Es[i], self.ml_nue_bevents[i]] for i in range(len(self.ml_nue_bevents))]
       data["ml_likelihood"] = self.ml_lh
       data["ml_walker_pos"] = [[[self.ml_walker_pos[i][1], self.ml_walker_pos[i][0]] for i in range(len(self.ml_walker_pos))],[[self.ml_walker_pos[i][2], self.ml_walker_pos[i][0]] for i in range(len(self.ml_walker_pos))],[[self.ml_walker_pos[i][2], self.ml_walker_pos[i][1]] for i in range(len(self.ml_walker_pos))]]
-      print(self.ml_walker_pos)
 
     data["osc_probs"]["numu"] = [ [Es[i], mu_osc_probs[i]] for i in range(len(Es))]
     data["osc_probs"]["nue"] = [ [Es[i], e_osc_probs[i]] for i in range(len(Es))]

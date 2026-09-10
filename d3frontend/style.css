@@ -385,10 +385,10 @@ label{
 }
 
 #opp_logo{
-    position:absolute;
+    position:fixed;
     width:90px;
     left:100px;
-    bottom:300px;
+    margin-top:10px;
     object-fit:cover;
 }
 
